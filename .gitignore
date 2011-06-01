@@ -1,0 +1,17 @@
+bw
+localdev
+update.sh
+badass.sh
+.metadata
+.project
+.DS_Store
+target
+.classpath
+.settings
+eclipse-target
+activemq-data
+.metadata
+**/.springBeans
+**/bin
+*~
+**/.clover
