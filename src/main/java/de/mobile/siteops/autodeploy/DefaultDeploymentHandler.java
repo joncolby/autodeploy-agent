@@ -10,53 +10,56 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.mobile.siteops.autodeploy.config.NodeConfig;
+import de.mobile.siteops.executor.ProcessExitCode;
 import de.mobile.siteops.executor.ProcessHandler;
 import de.mobile.siteops.executor.ProcessNotifier;
 import de.mobile.siteops.executor.ProcessService;
 import de.mobile.siteops.zookeeper.ZookeeperNodeHandler;
 import de.mobile.siteops.zookeeper.ZookeeperService;
 
+
 public class DefaultDeploymentHandler implements ZookeeperNodeHandler {
 
     private static Logger logger = Logger.getLogger(DefaultDeploymentHandler.class.getName());
-    
+
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
 
     private final ZookeeperService zookeeperService;
-    
+
     private final ProcessService processService;
-    
+
     private final File dataDir;
-    
+
     private final boolean keepData;
-    
+
     private final List<String> scriptArguments;
-    
+
     private final String node;
-    
+
     private boolean processing = false;
-    
+
     private File tempFile;
-    
+
     public DefaultDeploymentHandler(NodeConfig nodeConfig, ZookeeperService zookeeperService) {
         this.zookeeperService = zookeeperService;
         this.node = nodeConfig.getNode();
         this.dataDir = nodeConfig.getDataDirAsFile();
         this.keepData = nodeConfig.getKeepData();
         this.scriptArguments = nodeConfig.getScriptArguments();
-        this.processService = new ProcessService(nodeConfig.getScript(), nodeConfig.getIdentifier(), new DefaultProcessNotifier());
+        this.processService = new ProcessService(nodeConfig.getScript(), nodeConfig.getIdentifier(),
+                new DefaultProcessNotifier());
     }
 
     public void onNodeDeleted(String node) {
         if (processing) {
             if (processService.isProcessing()) {
-                logger.info("Node '" + node + "' was removed but script '" + processService.getCommand() + "' still running, terminating");
+                logger.info("Node '" + node + "' was removed but script '" + processService.getCommand()
+                        + "' still running, terminating");
                 processService.getHandler().killProcess();
             }
         }
     }
 
-    
     public void onNodeData(String node, Object data) {
         if (processing) {
             if (processService.isProcessing()) {
@@ -80,7 +83,7 @@ public class DefaultDeploymentHandler implements ZookeeperNodeHandler {
             zookeeperService.deleteNode(node, false);
             return;
         }
-        
+
         try {
             processService.clearArguments();
             processService.addArgument(tempFile.getAbsolutePath());
@@ -92,14 +95,15 @@ public class DefaultDeploymentHandler implements ZookeeperNodeHandler {
             logger.error("Cannot execute script '" + processService.getCommand() + "'");
         }
     }
-    
+
     private class DefaultProcessNotifier implements ProcessNotifier {
 
         public void processEnded(String identifier, int exitCode) {
             if (!keepData && tempFile != null && tempFile.exists()) {
                 tempFile.delete();
             }
-            logger.info("Script '" + identifier + "' ended with exitCode " + exitCode);
+            logger.info("Script '" + identifier + "' ended with exitCode " + exitCode + "("
+                    + ProcessExitCode.getByCode(exitCode).getDescription() + ")");
             processing = false;
             zookeeperService.deleteNode(node, false);
         }
@@ -114,9 +118,9 @@ public class DefaultDeploymentHandler implements ZookeeperNodeHandler {
         }
 
         public void onProcessOutput(String identifier, StreamType streamType, String line) {
-            logger.info("Received from script '" + identifier +  "' (on " + streamType + "): " + line);
+            logger.info("Received from script '" + identifier + "' (on " + streamType + "): " + line);
         }
-        
+
     }
 
 }

@@ -61,7 +61,7 @@
 					<appendAssemblyId>true</appendAssemblyId>
 					<archive>
 						<manifest>
-							<mainClass>de.mobile.siteops.autodeploy.Agent</mainClass>
+							<mainClass>de.mobile.siteops.autodeploy.AgentDaemon</mainClass>
 							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 						</manifest>
 					</archive>

@@ -11,7 +11,7 @@ import de.mobile.siteops.autodeploy.config.Configuration;
 public class AgentDaemon implements WrapperListener {
 
     private AgentJob job;
-    
+
     @Override
     public void controlEvent(int event) {
         if (!WrapperManager.isControlledByNativeWrapper()) {
@@ -32,10 +32,12 @@ public class AgentDaemon implements WrapperListener {
         }
         return null;
     }
-    
+
     @Override
     public int stop(int stopSignal) {
-        job.stop();
+        if (job != null) {
+            job.stop();
+        }
         return stopSignal;
     }
 
