@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<nodes>
+	<node>
+		<prefix>/deploymentQueue/Local/ibartel-devel</prefix>
+		<identifier>deployment</identifier>
+		<!-- <name>deployFull</name-->
+		<script>/tmp/launch.sh</script>
+		<datadir>/tmp/deploy</datadir>
+		<keepdata>false</keepdata>
+	</node>
+</nodes>

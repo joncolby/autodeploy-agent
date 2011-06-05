@@ -1,20 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>de.mobile</groupId>
-        <artifactId>mobile-java-pom</artifactId>
-        <version>3.1</version>
-    </parent>
+	<parent>
+		<groupId>de.mobile</groupId>
+		<artifactId>mobile-java-pom</artifactId>
+		<version>3.1</version>
+	</parent>
 
-    <groupId>de.mobile.siteops</groupId>
-    <artifactId>autodeployment-agent</artifactId>
-    <version>0.1-SNAPSHOT</version>
-    <name>Autodeployment Zookeeper agent</name>
+	<groupId>de.mobile.siteops</groupId>
+	<artifactId>autodeployment-agent</artifactId>
+	<version>0.1-SNAPSHOT</version>
+	<name>Autodeployment Zookeeper agent</name>
 
-    <dependencies>
+	<dependencies>
+
+		<dependency>
+			<groupId>de.mobile</groupId>
+			<artifactId>mobile-utils</artifactId>
+			<version>0.3</version>
+		</dependency>
+
+        <dependency>
+            <groupId>tanukisoft</groupId>
+            <artifactId>wrapper</artifactId>
+            <version>3.2.3</version>
+        </dependency>
+
+		<dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j</artifactId>
+			<version>2.0.16</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>r08</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.zookeeper</groupId>
@@ -22,123 +47,123 @@
 			<version>3.3.3</version>
 		</dependency>
 
-    </dependencies>
+	</dependencies>
 
-    <build>
-        <plugins>
+	<build>
+		<plugins>
 
-          <plugin>
-              <artifactId>maven-assembly-plugin</artifactId>
-              <configuration>
-                  <descriptorRefs>
-                      <descriptorRef>jar-with-dependencies</descriptorRef>
-                  </descriptorRefs>
-                  <appendAssemblyId>true</appendAssemblyId>
-                  <archive>
-                      <manifest>
-                          <mainClass>de.mobile.siteops.autodeployClient.Executor</mainClass>
-                          <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                      </manifest>
-                  </archive>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>make-assembly</id> <!-- this is used for inheritance merges -->
-                      <phase>package</phase> <!-- append to the packaging phase. -->
-                      <goals>
-                          <goal>single</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<appendAssemblyId>true</appendAssemblyId>
+					<archive>
+						<manifest>
+							<mainClass>de.mobile.siteops.autodeploy.Agent</mainClass>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id> <!-- this is used for inheritance merges -->
+						<phase>package</phase> <!-- append to the packaging phase. -->
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 
-          <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.4.2</version>
-                <configuration>
-                    <additionalClasspathElements>
-                        <additionalClasspathElement>${project.build.directory}/${project.build.finalName}</additionalClasspathElement>
-                    </additionalClasspathElements>
-                    <systemProperties>
-                        <property>
-                            <name>concordion.output.dir</name>
-                            <value>target/concordion</value>
-                        </property>
-                        <property>
-                            <name>tempDatabaseDir</name>
-                            <value>${basedir}/target/mysql-data</value>
-                        </property>
-                    </systemProperties>
-                    <excludes>
-                        <exclude>**/storytest/**/*Test.java</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>integration-test-storytest</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <phase>pre-integration-test</phase>
-                        <configuration>
-                            <excludes>
-                                <exclude>none</exclude>
-                            </excludes>
-                            <includes>
-                                <include>**/storytest/**/*Test.java</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.4.2</version>
+				<configuration>
+					<additionalClasspathElements>
+						<additionalClasspathElement>${project.build.directory}/${project.build.finalName}</additionalClasspathElement>
+					</additionalClasspathElements>
+					<systemProperties>
+						<property>
+							<name>concordion.output.dir</name>
+							<value>target/concordion</value>
+						</property>
+						<property>
+							<name>tempDatabaseDir</name>
+							<value>${basedir}/target/mysql-data</value>
+						</property>
+					</systemProperties>
+					<excludes>
+						<exclude>**/storytest/**/*Test.java</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>integration-test-storytest</id>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<phase>pre-integration-test</phase>
+						<configuration>
+							<excludes>
+								<exclude>none</exclude>
+							</excludes>
+							<includes>
+								<include>**/storytest/**/*Test.java</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+			</plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-            </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+			</plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jxr-plugin</artifactId>
-            </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+			</plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <configuration>
-                    <linkXref>true</linkXref>
-                    <sourceEncoding>iso-8859-1</sourceEncoding>
-                    <minimumTokens>100</minimumTokens>
-                    <targetJdk>1.5</targetJdk>
-                </configuration>
-            </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<configuration>
+					<linkXref>true</linkXref>
+					<sourceEncoding>iso-8859-1</sourceEncoding>
+					<minimumTokens>100</minimumTokens>
+					<targetJdk>1.5</targetJdk>
+				</configuration>
+			</plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-            </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+			</plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-changelog-plugin</artifactId>
-            </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-changelog-plugin</artifactId>
+			</plugin>
 
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jdepend-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>jdepend-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</reporting>
 
 </project>
