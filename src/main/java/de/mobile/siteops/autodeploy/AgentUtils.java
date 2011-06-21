@@ -35,7 +35,11 @@ public final class AgentUtils {
     public static String getDefaultNodePrefix() throws ConfigurationInvalidException {
         InetAddress address = getInetAddressForInterface("eth0");
         String enviroment = mapFromIpAddress(address.getHostAddress());
-        return BASE_NODE + enviroment + "/" + address.getHostName();
+        String hostName = address.getHostName();
+        if (address.getHostName().indexOf(".") > 0) {
+            hostName = address.getHostName().substring(0, address.getHostName().indexOf("."));
+        }
+        return BASE_NODE + enviroment + "/" + hostName;
     }
 
     private static String mapFromIpAddress(String ipAddress) throws ConfigurationInvalidException {

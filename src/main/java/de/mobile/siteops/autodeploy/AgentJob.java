@@ -66,7 +66,7 @@ public class AgentJob {
         }
 
         for (NodeConfig nodeConfig : nodesConfig.getNodes()) {
-            if (!config.getArguments().isEmpty()) {
+            if (config.getArguments() != null && !config.getArguments().isEmpty()) {
                 nodeConfig.setScriptArguments(config.getArguments());
             }
             if (nodeConfig.getPrefix() == null) {

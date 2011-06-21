@@ -72,7 +72,9 @@ public class ZookeeperService {
             return false;
         }
         nodeManager.setZookeeper(zookeeper);
-        nodeManager.refreshNodes();
+        if (state == ZookeeperState.CONNECTED) {
+            nodeManager.refreshNodes();
+        }
         return true;
     }
 
@@ -135,6 +137,7 @@ public class ZookeeperService {
                 case SyncConnected:
                     state = ZookeeperState.CONNECTED;
                     logger.info("Connected to Zookeeper server." + (serializeData ? " (data will be serialized and deserialized)"  : ""));
+                    nodeManager.refreshNodes();
                     break;
                 case Expired:
                     state = ZookeeperState.EXPIRED;

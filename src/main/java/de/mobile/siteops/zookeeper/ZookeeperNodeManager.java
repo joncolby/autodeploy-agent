@@ -11,6 +11,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
 
 
@@ -48,7 +49,6 @@ class ZookeeperNodeManager {
     public boolean unregister(String path) {
         Node node = getNodeByPath(path);
         if (node != null) {
-            // TODO stop possible running threads
             nodes.get(node).shutdown();
             nodes.remove(node);
             logger.info("Unregistered node '" + node + "'");
@@ -127,7 +127,7 @@ class ZookeeperNodeManager {
                 }
             } else {
                 // TODO handle possible running threads OR think about not removing node
-                iterator.remove();
+                //iterator.remove();
             }
         }
     }
@@ -231,6 +231,11 @@ class ZookeeperNodeManager {
 
         
         public boolean refresh() {
+            if (zookeeper.getState() == States.CONNECTING) {
+                logger.info("Cannot refresh node '" + this + ", currently trying to connect to zookeeper server");
+                return false;
+            }
+            
             try {
                 stat = zookeeper.exists(path, true);
                 if (logger.isDebugEnabled()) {
