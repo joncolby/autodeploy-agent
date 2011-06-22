@@ -58,22 +58,7 @@ public class AgentDaemon implements WrapperListener {
     }
 
     public static void main(String[] args) {
-        Configuration config = new Configuration();
-        CmdLineParser parser = new CmdLineParser(config);
-        parser.setUsageWidth(120);
-        AgentJob agentJob = null;
-        try {
-            parser.parseArgument(args);
-            agentJob = new AgentJob(config);
-
-        } catch (CmdLineException e) {
-            System.err.println(e.getMessage());
-            parser.printUsage(System.err);
-        }
-        
-        if (agentJob != null) {
-            agentJob.start();
-        }
+        WrapperManager.start(new AgentDaemon(), args);
     }
 
 }

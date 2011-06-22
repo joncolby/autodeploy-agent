@@ -30,6 +30,39 @@ public class AgentJob {
     private NodesConfig nodesConfig;
     
     private final Configuration config;
+    
+    private WatchDog watcher = new WatchDog();
+    
+    static class WatchDog {
+        
+        Thread thread;
+        
+        void start() {
+            thread = new Thread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        while (true) {
+                            Thread.sleep(100);
+                        }
+                    } catch (InterruptedException interrupt) {
+                        return; // graceful return
+                    }
+                }
+            });
+            thread.setDaemon(false);
+            thread.start();
+        }
+        
+        void stop() {
+            thread.interrupt();
+            try {
+                thread.join();
+            } catch (InterruptedException ie) {
+                // 
+            }
+        }
+        
+    }
 
     public AgentJob(Configuration config) {
         this.config = config;
@@ -104,16 +137,14 @@ public class AgentJob {
             zookeeperService.registerNode(nodeConfig.getNode(), deploymentHandler);
             zookeeperService.connect();
         }
-        
-        while (true) {
-            // infinite loop
-        }
+        watcher.start();
     }
     
     public synchronized void stop() {
         if (zookeeperService != null) {
             zookeeperService.shutdown();
         }
+        watcher.stop();
     }
     
     private NodesConfig getNodesConfig(InputStream is) {
