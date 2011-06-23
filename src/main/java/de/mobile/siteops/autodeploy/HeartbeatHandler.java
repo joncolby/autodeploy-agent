@@ -47,6 +47,10 @@ public class HeartbeatHandler implements ZookeeperNodeHandler {
         zookeeperService.writeData(node, lastData);
         logger.debug("Sent heartbeat to node '" + node + "'");
     }
+
+    public void refresh() {
+        zookeeperService.refresh(node);
+    }
     
     public String getNodeName() {
         return node;

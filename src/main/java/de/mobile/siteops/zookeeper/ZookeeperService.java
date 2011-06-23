@@ -88,7 +88,11 @@ public class ZookeeperService {
         }
         return true;
     }
-
+    
+    public void refresh(String node) {
+        nodeManager.refresh(node);
+    }
+    
     public boolean connected() {
         return state == ZookeeperState.CONNECTED;
     }

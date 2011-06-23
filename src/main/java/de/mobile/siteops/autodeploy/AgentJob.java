@@ -117,7 +117,7 @@ public class AgentJob {
         zookeeperService.connect();
         
         AgentUtils.sleep(2); // give zookeeper time to connect
-        registerHeartbeat();
+        heartbeatHandler.refresh();
         
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         
@@ -206,10 +206,11 @@ public class AgentJob {
             switch (state) {
                 case DISCONNECTED:
                     logger.info("Reconnecting because of server disconnected");
-//                    zookeeperService.connect();
+                    heartbeatHandler.setActive(false);
                     break;
                 case EXPIRED:
                     logger.info("Reconnecting because of expired session");
+                    heartbeatHandler.setActive(false);
                     zookeeperService.connect();
                     break;
                 case CONNECTED:

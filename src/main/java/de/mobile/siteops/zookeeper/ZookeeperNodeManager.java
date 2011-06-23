@@ -73,8 +73,6 @@ class ZookeeperNodeManager {
                 logger.info("Created new node '" + node + "', handler: " + nodeHandler.getClass().getName());
                 return true;
             }
-        } else {
-            logger.error("Could not create node '" + path + "' since this node already exists");
         }
         return false;
     }
@@ -99,6 +97,42 @@ class ZookeeperNodeManager {
             return result;
         }
         return false;
+    }
+    
+    void refreshNodes() {
+        Iterator<Node> iterator = nodes.keySet().iterator();
+        while (iterator.hasNext()) {
+            Node node = iterator.next();
+            refreshInternal(node);
+        }
+    }
+
+    void refresh(String path) {
+        Node node = getNodeByPath(path);
+        if (node != null) {
+            refreshInternal(node);
+        }
+    }
+    
+    private void refreshInternal(Node node) {
+        if (node.refresh()) {
+            if (node.hasData()) {
+                logger.info("Node '" + node + "' refreshed and watched, consuming data already existent data");
+                handleDataInternal(node);
+            } else {
+                logger.info("Node '" + node + "' refreshed and watched");
+            }
+        }
+    }
+    
+    void shutdown() {
+        Iterator<Node> iterator = nodes.keySet().iterator();
+        while (iterator.hasNext()) {
+            Node node = iterator.next();
+            nodes.get(node).shutdown();
+            logger.info("Unregistered node '" + node + "'");
+            iterator.remove();
+        }
     }
     
     void handleEvent(WatchedEvent watchedEvent) {
@@ -141,32 +175,7 @@ class ZookeeperNodeManager {
         }
     }
 
-    void refreshNodes() {
-        Iterator<Node> iterator = nodes.keySet().iterator();
-        while (iterator.hasNext()) {
-            Node node = iterator.next();
-            if (node.refresh()) {
-                if (node.hasData()) {
-                    logger.info("Node '" + node + "' refreshed and watched, consuming data already existent data");
-                    handleDataInternal(node);
-                } else {
-                    logger.info("Node '" + node + "' refreshed and watched");
-                }
-            }
-        }
-    }
-
-    void shutdown() {
-        Iterator<Node> iterator = nodes.keySet().iterator();
-        while (iterator.hasNext()) {
-            Node node = iterator.next();
-            nodes.get(node).shutdown();
-            logger.info("Unregistered node '" + node + "'");
-            iterator.remove();
-        }
-    }
-
-    public Node getNodeByPath(String path) {
+    private Node getNodeByPath(String path) {
         for (Node node : nodes.keySet()) {
             if (node.getPath().equals(path)) {
                 return node;
