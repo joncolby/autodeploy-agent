@@ -49,8 +49,9 @@ public class ZookeeperService {
         this.stateMonitor = stateMonitor;
     }
 
-    public void registerNode(String path, ZookeeperNodeHandler nodeHandler) {
-        nodeManager.register(path, nodeHandler);
+    public void registerNode(ZookeeperNodeHandler nodeHandler) {
+        Reject.ifNull(nodeHandler);
+        nodeManager.register(nodeHandler);
     }
     
     public boolean unregisterNode(String path) {
@@ -59,6 +60,16 @@ public class ZookeeperService {
     
     public boolean deleteNode(String path, boolean unregister) {
         return nodeManager.deleteNode(path, unregister);
+    }
+    
+    public boolean createNode(ZookeeperNodeHandler nodeHandler) {
+        return nodeManager.createNode(nodeHandler);
+    }
+    
+    public void writeData(String path, Object data) {
+        Reject.ifNullOrEmptyOrWhitespace(path);
+        Reject.ifNull(data);
+        nodeManager.writeData(path, data);
     }
     
     public boolean connect() {

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -33,37 +34,10 @@ public class AgentJob {
     
     private WatchDog watcher = new WatchDog();
     
-    static class WatchDog {
-        
-        Thread thread;
-        
-        void start() {
-            thread = new Thread(new Runnable() {
-                @Override public void run() {
-                    try {
-                        while (true) {
-                            Thread.sleep(100);
-                        }
-                    } catch (InterruptedException interrupt) {
-                        return; // graceful return
-                    }
-                }
-            });
-            thread.setDaemon(false);
-            thread.start();
-        }
-        
-        void stop() {
-            thread.interrupt();
-            try {
-                thread.join();
-            } catch (InterruptedException ie) {
-                // 
-            }
-        }
-        
-    }
-
+    private HeartbeatHandler heartbeatHandler;
+    
+    private ShutdownHook shutdownHook;
+    
     public AgentJob(Configuration config) {
         this.config = config;
 
@@ -86,10 +60,9 @@ public class AgentJob {
             } else {
                 is = new FileInputStream(config.getNodesConfigFile());
             }
-
             
             nodesConfig = getNodesConfig(is);
-            defaultNodePrefix = AgentUtils.getDefaultNodePrefix();
+            defaultNodePrefix = DefaultDeploymentHandler.BASE_DEPLOYMENT_NODE + AgentUtils.getEnvironmentAndHost();
         } catch (IOException e) {
             logger.error("Cannot copen nodes config file");
             return;
@@ -122,11 +95,14 @@ public class AgentJob {
         }
 
         this.nodesConfig = nodesConfig;
+        this.shutdownHook = new ShutdownHook(this);
     }
 
-    public synchronized void start() {
+    public synchronized void start() throws ConfigurationInvalidException {
         try {
             zookeeperService = new ZookeeperService(config.getZooKeeperUrl(), config.getSerializeData(),  new SimpleStateMonitor());
+            String nodeName = HeartbeatHandler.HEARTBEAT_NODE_PREFIX + AgentUtils.getEnvironmentAndHost();
+            heartbeatHandler = new HeartbeatHandler(nodeName, zookeeperService);
         } catch (IOException e) {
             logger.error("Cannot create zookeeper for address " + config.getZooKeeperUrl());
             return;
@@ -134,17 +110,36 @@ public class AgentJob {
 
         for (NodeConfig nodeConfig : nodesConfig.getNodes()) {
             DefaultDeploymentHandler deploymentHandler = new DefaultDeploymentHandler(nodeConfig, zookeeperService);
-            zookeeperService.registerNode(nodeConfig.getNode(), deploymentHandler);
-            zookeeperService.connect();
+            zookeeperService.registerNode(deploymentHandler);
         }
+        String nodeName = RestartHandler.RESTART_NODE_PREFIX + AgentUtils.getEnvironmentAndHost();
+        zookeeperService.registerNode(new RestartHandler(nodeName, zookeeperService));
+        zookeeperService.connect();
+        
+        AgentUtils.sleep(2); // give zookeeper time to connect
+        registerHeartbeat();
+        
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+        
         watcher.start();
     }
     
-    public synchronized void stop() {
+    private void registerHeartbeat() {
+        if (zookeeperService.createNode(heartbeatHandler)) {
+            heartbeatHandler.setActive(true);
+            heartbeatHandler.heartbeat();
+        }
+    }
+
+    public synchronized void stop(int errorCode) {
+        watcher.stop();
         if (zookeeperService != null) {
             zookeeperService.shutdown();
+            logger.info("Zookeper stopped, all nodes unregistered");
         }
-        watcher.stop();
+        if (errorCode > 0) {
+            System.exit(errorCode);
+        }
     }
     
     private NodesConfig getNodesConfig(InputStream is) {
@@ -160,13 +155,58 @@ public class AgentJob {
         return nodesConfig;
     }
 
+    static class ShutdownHook extends Thread {
+        private final AgentJob agentJob;
+        public ShutdownHook(AgentJob agentJob) {
+            this.agentJob = agentJob;
+        }
+
+        public void run() {
+            logger.info("Shutting down agent gracefully.");
+            agentJob.stop(0);
+        }
+    }
+    
+    static class WatchDog {
+        
+        Thread thread;
+        
+        void start() {
+            thread = new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        while (true) {
+                            Thread.sleep(TimeUnit.SECONDS.toMillis(HeartbeatHandler.HEARTBEAT_INTERVAL));
+                            HeartbeatHandler.getInstance().heartbeat();
+                        }
+                    } catch (InterruptedException interrupt) {
+                        return; // graceful return
+                    }
+                }
+            });
+            thread.setDaemon(false);
+            thread.start();
+        }
+        
+        void stop() {
+            thread.interrupt();
+            try {
+                thread.join();
+                logger.info("Heartbeat stopped");
+            } catch (InterruptedException ie) {
+                // 
+            }
+        }
+        
+    }
+    
     private class SimpleStateMonitor implements ZookeeperStateMonitor {
 
         public void notity(ZookeeperState state) {
             switch (state) {
                 case DISCONNECTED:
                     logger.info("Reconnecting because of server disconnected");
-                    zookeeperService.connect();
+//                    zookeeperService.connect();
                     break;
                 case EXPIRED:
                     logger.info("Reconnecting because of expired session");
@@ -174,6 +214,9 @@ public class AgentJob {
                     break;
                 case CONNECTED:
                     logger.info("Successfully connected to zookeeper server");
+                    if (!heartbeatHandler.isActive()) {
+                        registerHeartbeat();
+                    }
                     break;
                  default:
                      logger.warn("Unhandled state in StateMonitor: " + state);

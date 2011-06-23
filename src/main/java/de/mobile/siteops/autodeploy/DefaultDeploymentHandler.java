@@ -24,6 +24,8 @@ public class DefaultDeploymentHandler implements ZookeeperNodeHandler {
 
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
 
+    static final String BASE_DEPLOYMENT_NODE = "/deploymentQueue/";
+    
     private final ZookeeperService zookeeperService;
 
     private final ProcessService processService;
@@ -50,6 +52,10 @@ public class DefaultDeploymentHandler implements ZookeeperNodeHandler {
                 new DefaultProcessNotifier());
     }
 
+    public String getNodeName() {
+        return node;
+    }
+    
     public void onNodeDeleted(String node) {
         if (processing) {
             if (processService.isProcessing()) {

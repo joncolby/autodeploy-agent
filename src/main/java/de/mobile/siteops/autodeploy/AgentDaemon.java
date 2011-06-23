@@ -1,47 +1,19 @@
 package de.mobile.siteops.autodeploy;
 
+import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.tanukisoftware.wrapper.WrapperListener;
-import org.tanukisoftware.wrapper.WrapperManager;
 
 import de.mobile.siteops.autodeploy.config.Configuration;
+import de.mobile.siteops.autodeploy.config.ConfigurationInvalidException;
 
+public class AgentDaemon {
 
-public class AgentDaemon implements WrapperListener {
+    private static Logger logger = Logger.getLogger(AgentDaemon.class.getName());
 
-    private AgentJob job;
-
-    @Override
-    public void controlEvent(int event) {
-        if (!WrapperManager.isControlledByNativeWrapper()) {
-            // We are not being controlled by the Wrapper, so
-            // handle the event ourselves.
-            if ((event == WrapperManager.WRAPPER_CTRL_C_EVENT) || (event == WrapperManager.WRAPPER_CTRL_CLOSE_EVENT)
-                    || (event == WrapperManager.WRAPPER_CTRL_SHUTDOWN_EVENT)) {
-                WrapperManager.stop(0);
-            }
-        }
-    }
-
-    @Override
-    public Integer start(String[] args) {
-        job = getAgentJob(args);
-        if (job != null) {
-            job.start();
-        }
-        return null;
-    }
-
-    @Override
-    public int stop(int stopSignal) {
-        if (job != null) {
-            job.stop();
-        }
-        return stopSignal;
-    }
-
-    private AgentJob getAgentJob(String[] args) {
+    private static final String VERSION = "0.5";
+    
+    private static AgentJob getAgentJob(String[] args) {
         Configuration config = new Configuration();
         CmdLineParser parser = new CmdLineParser(config);
         parser.setUsageWidth(120);
@@ -58,7 +30,14 @@ public class AgentDaemon implements WrapperListener {
     }
 
     public static void main(String[] args) {
-        WrapperManager.start(new AgentDaemon(), args);
+        final AgentJob agentJob = getAgentJob(args);
+        logger.info("Autodeploy agent starting (version " + VERSION + ")");
+        try {
+            agentJob.start();
+        } catch (ConfigurationInvalidException e) {
+            logger.error("Configuration exception occured: " + e.getMessage(),e);
+            System.exit(1);
+        }
     }
 
 }

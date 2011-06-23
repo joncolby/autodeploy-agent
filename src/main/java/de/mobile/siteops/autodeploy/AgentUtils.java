@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -32,43 +33,43 @@ public final class AgentUtils {
         return file.exists() && file.isDirectory();
     }
 
-    public static String getDefaultNodePrefix() throws ConfigurationInvalidException {
+    public static String getEnvironmentAndHost() throws ConfigurationInvalidException {
         InetAddress address = getInetAddressForInterface("eth0");
-        String enviroment = mapFromIpAddress(address.getHostAddress());
+        String environment = mapFromIpAddress(address.getHostAddress());
         String hostName = address.getHostName();
         if (address.getHostName().indexOf(".") > 0) {
             hostName = address.getHostName().substring(0, address.getHostName().indexOf("."));
         }
-        return BASE_NODE + enviroment + "/" + hostName;
+        return environment + "/" + hostName;
     }
-
+    
     private static String mapFromIpAddress(String ipAddress) throws ConfigurationInvalidException {
         String[] ipChunks = Iterables.toArray(Splitter.on(".").omitEmptyStrings().trimResults().split(ipAddress),
             String.class);
         Integer dataCenter = Integer.valueOf(ipChunks[1]);
-        Integer subEnviroment = Integer.valueOf(ipChunks[2]);
+        Integer subEnvironment = Integer.valueOf(ipChunks[2]);
 
-        String enviroment = null;
+        String environment = null;
 
         if (dataCenter.equals(45) || dataCenter.equals(46) || dataCenter.equals(47)) {
-            enviroment = "Production";
+            environment = "Production";
         } else if (dataCenter.equals(44)) {
-            if (subEnviroment.equals(230)) {
-                enviroment = "Staging";
-            } else if (subEnviroment > 200 && subEnviroment < 230) {
-                enviroment = "Integra" + subEnviroment;
+            if (subEnvironment.equals(230)) {
+                environment = "Staging";
+            } else if (subEnvironment > 200 && subEnvironment < 230) {
+                environment = "Integra" + subEnvironment;
             } else {
-                enviroment = "VPS";
+                environment = "VPS";
             }
         } else if (dataCenter.equals(250)) {
-            enviroment = "local";
+            environment = "local";
         }
 
-        if (enviroment == null) {
-            throw new ConfigurationInvalidException("Could not determine enviroment for ip address " + ipAddress);
+        if (environment == null) {
+            throw new ConfigurationInvalidException("Could not determine environment for ip address " + ipAddress);
         }
 
-        return enviroment;
+        return environment;
     }
 
     private static InetAddress getInetAddressForInterface(String interfaceName) throws ConfigurationInvalidException {
@@ -82,6 +83,14 @@ public final class AgentUtils {
             throw new ConfigurationInvalidException("Could not get ip address for interface " + interfaceName, e);
         }
         return null;
+    }
+
+   
+    public static void sleep(int seconds) {
+        try {
+            Thread.sleep(TimeUnit.SECONDS.toMillis(seconds));
+        } catch (InterruptedException e) {
+        }
     }
 
 }

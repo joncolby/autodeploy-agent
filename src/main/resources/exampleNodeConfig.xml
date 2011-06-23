@@ -4,7 +4,7 @@
 		<!-- <prefix>/deploymentQueue/Local/ibartel-devel</prefix> -->
 		<name>deployFull</name>
 		<identifier>deployment</identifier>
-		<script>/tmp/launch.sh</script>
+		<script>/home/ibartel/launch.sh</script>
 		<datadir>/tmp/deploy</datadir>
 		<keepdata>false</keepdata>
 	</node>
