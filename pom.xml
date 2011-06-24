@@ -9,7 +9,7 @@
 	<groupId>de.mobile.siteops</groupId>
 	<artifactId>autodeployment-agent</artifactId>
 	<version>LATEST-SNAPSHOT</version>
-	<name>Autodeployment Zookeeper agent</name>
+	<name>${artifactId}</name>
 	<packaging>jar</packaging>
 
 	<distributionManagement>
