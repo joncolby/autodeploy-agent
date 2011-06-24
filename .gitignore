@@ -15,3 +15,5 @@ activemq-data
 **/bin
 *~
 **/.clover
+.idea
+*.iml
