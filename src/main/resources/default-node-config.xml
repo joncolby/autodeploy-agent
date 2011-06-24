@@ -2,10 +2,10 @@
 <nodes>
 	<node>
 		<!-- <prefix>/deploymentQueue/Local/ibartel-devel</prefix> -->
-		<name>deployFull</name>
+		<!-- <name>deployFull</name>  -->
 		<identifier>deployment</identifier>
-		<script>/home/ibartel/launch.sh</script>
-		<datadir>/tmp/deploy</datadir>
-		<keepdata>false</keepdata>
+		<script>/opt/autodeploy/deploy_wrapper.sh</script>
+		<datadir>/opt/autodeploy/tmp</datadir>
+		<keepdata>true</keepdata>
 	</node>
 </nodes>
