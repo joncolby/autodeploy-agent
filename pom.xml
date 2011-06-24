@@ -28,11 +28,11 @@
 	<repositories>
 		<repository>
 			<id>nexus-mobile</id>
-			<url>https://ci.corp.mobile.de/nexus/content/repositories/hosted-mobile-releases</url>
+			<url>http://ci.corp.mobile.de/nexus/content/repositories/hosted-mobile-releases</url>
 		</repository>
 		<repository>
 			<id>java-net-nexus-proxy</id>
-			<url>https://ci.corp.mobile.de/nexus/content/repositories/javet.net</url>
+			<url>http://ci.corp.mobile.de/nexus/content/repositories/javet.net</url>
 		</repository>
 		
 	</repositories>
