@@ -4,7 +4,7 @@
 		<!-- <prefix>/deploymentQueue/Local/ibartel-devel</prefix> -->
 		<!-- <name>deployFull</name>  -->
 		<identifier>deployment</identifier>
-		<script>/opt/autodeploy/deploy_wrapper.sh</script>
+		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
 		<datadir>/opt/autodeploy/tmp</datadir>
 		<keepdata>true</keepdata>
 	</node>
