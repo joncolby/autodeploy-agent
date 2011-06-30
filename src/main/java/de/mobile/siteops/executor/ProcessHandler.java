@@ -1,6 +1,7 @@
 package de.mobile.siteops.executor;
 
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,13 +19,16 @@ public class ProcessHandler {
     
     private final ExecutorService executor = Executors.newCachedThreadPool();
     
+    private final Map<String, Object> additionalDataMap;
+    
     private boolean running = true;
     
-    public ProcessHandler(Process process, String identifier, ProcessNotifier notifier) {
+    public ProcessHandler(Process process, Map<String, Object> additionalDataMap, String identifier, ProcessNotifier notifier) {
         this.process = process;
+        this.additionalDataMap = additionalDataMap;
         this.identifier = identifier;
         this.notifier = notifier;
-
+        
         executor.execute(new StreamHandler(process.getInputStream(), StreamType.STDOUT));
         executor.execute(new StreamHandler(process.getErrorStream(), StreamType.STDERR));
 
@@ -34,7 +38,7 @@ public class ProcessHandler {
         try {
             process.waitFor();
             if (triggerNotifier) {
-                notifier.processEnded(identifier, process.exitValue());
+                notifier.processEnded(identifier, additionalDataMap, process.exitValue());
             }
             executor.shutdownNow();
             running = false;
@@ -46,11 +50,11 @@ public class ProcessHandler {
             public void run() {
                 try {
                     process.waitFor();
-                    notifier.processEnded(identifier, process.exitValue());
+                    notifier.processEnded(identifier, additionalDataMap, process.exitValue());
                     executor.shutdownNow();
                     running = false;
                 } catch (InterruptedException e) {
-                    notifier.processInterrupted(identifier);
+                    notifier.processInterrupted(identifier, additionalDataMap);
                 }
                 
             }
@@ -88,10 +92,10 @@ public class ProcessHandler {
             while (scanner.hasNext()) {
                 if (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
-                    notifier.onProcessOutput(identifier, streamType, line);
+                    notifier.onProcessOutput(identifier, streamType, line, additionalDataMap);
                 } else if (scanner.hasNext()) {
                     String line = scanner.next();
-                    notifier.onProcessOutput(identifier, streamType, line);
+                    notifier.onProcessOutput(identifier, streamType, line, additionalDataMap);
                 }
             }
             scanner.close();

@@ -11,9 +11,9 @@ public class AgentDaemon {
 
     private static Logger logger = Logger.getLogger(AgentDaemon.class.getName());
 
-    private static final String VERSION = "0.5";
+    private static final String VERSION = "0.6";
     
-    private static AgentJob getAgentJob(String[] args) {
+    private static AgentJob getAgentJob(String[] args) throws ConfigurationInvalidException {
         Configuration config = new Configuration();
         CmdLineParser parser = new CmdLineParser(config);
         parser.setUsageWidth(120);
@@ -22,17 +22,22 @@ public class AgentDaemon {
             parser.parseArgument(args);
             return new AgentJob(config);
 
+        } catch (ConfigurationInvalidException e) {
+            logger.error(e.getMessage());
+            System.err.println(e.getMessage());
+            System.exit(1);
         } catch (CmdLineException e) {
             System.err.println(e.getMessage());
             parser.printUsage(System.err);
+            System.exit(1);
         }
         return null;
     }
 
     public static void main(String[] args) {
-        final AgentJob agentJob = getAgentJob(args);
-        logger.info("Autodeploy agent starting (version " + VERSION + ")");
         try {
+            logger.info("Autodeploy agent starting (version " + VERSION + ")");
+            final AgentJob agentJob = getAgentJob(args);
             agentJob.start();
         } catch (ConfigurationInvalidException e) {
             logger.error("Configuration exception occured: " + e.getMessage(),e);

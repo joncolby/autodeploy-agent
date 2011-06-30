@@ -34,19 +34,16 @@
 			<id>java-net-nexus-proxy</id>
 			<url>http://ci.corp.mobile.de/nexus/content/repositories/javet.net</url>
 		</repository>
-		
+
 	</repositories>
 
 	<dependencies>
 
 		<dependency>
-			<groupId>de.mobile</groupId>
-			<artifactId>mobile-utils</artifactId>
+			<groupId>de.mobile.zookeeper</groupId>
+			<artifactId>mobile-zookeeper-service</artifactId>
 			<version>0.3</version>
 		</dependency>
-
-		<!-- <dependency> <groupId>tanukisoft</groupId> <artifactId>wrapper</artifactId> 
-			<version>3.2.3</version> </dependency> -->
 
 		<dependency>
 			<groupId>args4j</groupId>
@@ -58,18 +55,6 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>r08</version>
-		</dependency>
-
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.zookeeper</groupId>
-			<artifactId>zookeeper</artifactId>
-			<version>3.3.3</version>
 		</dependency>
 
 	</dependencies>

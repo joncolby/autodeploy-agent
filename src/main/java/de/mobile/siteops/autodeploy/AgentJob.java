@@ -17,9 +17,9 @@ import de.mobile.siteops.autodeploy.config.Configuration;
 import de.mobile.siteops.autodeploy.config.ConfigurationInvalidException;
 import de.mobile.siteops.autodeploy.config.NodeConfig;
 import de.mobile.siteops.autodeploy.config.NodesConfig;
-import de.mobile.siteops.zookeeper.ZookeeperService;
-import de.mobile.siteops.zookeeper.ZookeeperService.ZookeeperState;
-import de.mobile.siteops.zookeeper.ZookeeperStateMonitor;
+import de.mobile.zookeeper.ZookeeperService;
+import de.mobile.zookeeper.ZookeeperService.ZookeeperState;
+import de.mobile.zookeeper.ZookeeperStateMonitor;
 
 
 public class AgentJob {
@@ -27,21 +27,24 @@ public class AgentJob {
     private static Logger logger = Logger.getLogger(AgentJob.class.getName());
 
     private ZookeeperService zookeeperService;
-    
-    private NodesConfig nodesConfig;
-    
-    private final Configuration config;
-    
-    private WatchDog watcher = new WatchDog();
-    
-    private HeartbeatHandler heartbeatHandler;
-    
-    private ShutdownHook shutdownHook;
-    
-    public AgentJob(Configuration config) {
-        this.config = config;
 
-        NodesConfig nodesConfig;
+    private NodesConfig nodesConfig;
+
+    private final Configuration config;
+
+    private WatchDog watcher = new WatchDog();
+
+    private HeartbeatHandler heartbeatHandler;
+
+    private ShutdownHook shutdownHook;
+
+    private String environmentAndHost;
+
+    public AgentJob(Configuration config) throws ConfigurationInvalidException {
+        this.config = config;
+        this.environmentAndHost = AgentUtils.getEnvironmentAndHost();
+
+        NodesConfig nodesConfig = null;
         String defaultNodePrefix = AgentUtils.BASE_NODE;
         try {
             InputStream is;
@@ -49,26 +52,29 @@ public class AgentJob {
                 if (config.getNodesConfigFile().getAbsolutePath().contains("classpath")) {
                     URL resource = getClass().getClassLoader().getResource(config.getNodesConfigFile().getName());
                     if (resource == null) {
-                        logger.error("Could not read nodes configuration file '" +  config.getNodesConfigFile().getName() + "' from classpath");
-                        return;
+                        throw new ConfigurationInvalidException("Could not read nodes configuration file '"
+                                + config.getNodesConfigFile().getName() + "' from classpath");
                     }
                     is = resource.openStream();
                 } else {
-                    logger.error("Could not read nodes configuration file (not exists or readable)");
-                    return;
+                    throw new ConfigurationInvalidException(
+                            "Could not read nodes configuration file (not exists or readable)");
                 }
             } else {
                 is = new FileInputStream(config.getNodesConfigFile());
             }
-            
-            nodesConfig = getNodesConfig(is);
-            defaultNodePrefix = DefaultDeploymentHandler.BASE_DEPLOYMENT_NODE + AgentUtils.getEnvironmentAndHost();
+
+            try {
+                JAXBContext jaxbContext = JAXBContext.newInstance(NodesConfig.class);
+                Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+                nodesConfig = (NodesConfig) unmarshaller.unmarshal(is);
+            } catch (JAXBException e) {
+                throw new RuntimeException(e);
+            }
+
+            defaultNodePrefix = DefaultDeploymentHandler.BASE_DEPLOYMENT_NODE + environmentAndHost;
         } catch (IOException e) {
-            logger.error("Cannot copen nodes config file");
-            return;
-        } catch (ConfigurationInvalidException e) {
-            logger.error("Configuration error: " + e.getMessage());
-            return;
+            throw new ConfigurationInvalidException("Cannot copen nodes config file");
         }
 
         for (NodeConfig nodeConfig : nodesConfig.getNodes()) {
@@ -79,18 +85,17 @@ public class AgentJob {
                 nodeConfig.setPrefix(defaultNodePrefix);
             }
             if (!AgentUtils.directoryExists(nodeConfig.getDataDir())) {
-                logger.error("Datadir '" + nodeConfig.getDataDir() + "' does not exists or is a file");
-                return;
+                throw new ConfigurationInvalidException("Datadir '" + nodeConfig.getDataDir()
+                        + "' does not exists or is a file");
             }
             if (nodeConfig.getScript() != null) {
                 File scriptFile = new File(nodeConfig.getScript());
                 if (!AgentUtils.scriptFileValid(scriptFile)) {
-                    logger.error("Configuration error: script file not readable or executable");
-                    return;
+                    throw new ConfigurationInvalidException(
+                            "Configuration error: script file not readable or executable");
                 }
             } else {
-                logger.error("Configuration error: script is not specified");
-                return;
+                throw new ConfigurationInvalidException("Configuration error: script is not specified");
             }
         }
 
@@ -100,35 +105,42 @@ public class AgentJob {
 
     public synchronized void start() throws ConfigurationInvalidException {
         try {
-            zookeeperService = new ZookeeperService(config.getZooKeeperUrl(), config.getSerializeData(),  new SimpleStateMonitor());
-            String nodeName = HeartbeatHandler.HEARTBEAT_NODE_PREFIX + AgentUtils.getEnvironmentAndHost();
-            heartbeatHandler = new HeartbeatHandler(nodeName, zookeeperService);
+            zookeeperService = new ZookeeperService(config.getZooKeeperUrl(), config.getSerializeData(),
+                    new SimpleStateMonitor());
         } catch (IOException e) {
             logger.error("Cannot create zookeeper for address " + config.getZooKeeperUrl());
             return;
         }
-
-        for (NodeConfig nodeConfig : nodesConfig.getNodes()) {
-            DefaultDeploymentHandler deploymentHandler = new DefaultDeploymentHandler(nodeConfig, zookeeperService);
-            zookeeperService.registerNode(deploymentHandler);
-        }
-        String nodeName = RestartHandler.RESTART_NODE_PREFIX + AgentUtils.getEnvironmentAndHost();
-        zookeeperService.registerNode(new RestartHandler(nodeName, zookeeperService));
         zookeeperService.connect();
-        
-        AgentUtils.sleep(2); // give zookeeper time to connect
-        heartbeatHandler.refresh();
-        
+
+        // nodes will be initialized in initializeNodes() after connected, to ensure everthing is setup correctly after
+        // reconnect
+
         Runtime.getRuntime().addShutdownHook(shutdownHook);
-        
+
         watcher.start();
     }
-    
-    private void registerHeartbeat() {
+
+    private void initializeNodes() {
+        String heartbeatNode = HeartbeatHandler.HEARTBEAT_NODE_PREFIX + environmentAndHost;
+        heartbeatHandler = new HeartbeatHandler(heartbeatNode, zookeeperService);
         if (zookeeperService.createNode(heartbeatHandler)) {
             heartbeatHandler.setActive(true);
             heartbeatHandler.heartbeat();
         }
+
+        for (NodeConfig nodeConfig : nodesConfig.getNodes()) {
+
+            String statusNode = StatusHandler.STATUS_NODE_PREFIX + environmentAndHost;
+            StatusHandler statusHandler = new StatusHandler(statusNode, zookeeperService);
+            zookeeperService.createNode(statusHandler);
+
+            DefaultDeploymentHandler deploymentHandler = new DefaultDeploymentHandler(nodeConfig, statusHandler,
+                    zookeeperService);
+            zookeeperService.registerNode(deploymentHandler);
+        }
+        String restartNode = RestartHandler.RESTART_NODE_PREFIX + environmentAndHost;
+        zookeeperService.registerNode(new RestartHandler(restartNode, zookeeperService));
     }
 
     public synchronized void stop(int errorCode) {
@@ -141,22 +153,37 @@ public class AgentJob {
             System.exit(errorCode);
         }
     }
-    
-    private NodesConfig getNodesConfig(InputStream is) {
-        NodesConfig nodesConfig = null;
-        try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(NodesConfig.class);
-            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            nodesConfig = (NodesConfig) unmarshaller.unmarshal(is);
-        } catch (JAXBException e) {
-            throw new RuntimeException(e);
+
+    private class SimpleStateMonitor implements ZookeeperStateMonitor {
+
+        public void notity(ZookeeperState state) {
+            switch (state) {
+                case DISCONNECTED:
+                    logger.info("Reconnecting because of server disconnected");
+                    heartbeatHandler.setActive(false);
+                    break;
+                case EXPIRED:
+                    logger.info("Reconnecting because of expired session");
+                    heartbeatHandler.setActive(false);
+                    zookeeperService.connect();
+                    break;
+                case CONNECTED:
+                    // try {
+                    // TimeUnit.SECONDS.sleep(2);
+                    // } catch (InterruptedException e) {}
+                    logger.info("Successfully connected to zookeeper server");
+                    initializeNodes();
+                    break;
+                default:
+                    logger.warn("Unhandled state in StateMonitor: " + state);
+            }
         }
 
-        return nodesConfig;
     }
 
     static class ShutdownHook extends Thread {
         private final AgentJob agentJob;
+
         public ShutdownHook(AgentJob agentJob) {
             this.agentJob = agentJob;
         }
@@ -166,11 +193,11 @@ public class AgentJob {
             agentJob.stop(0);
         }
     }
-    
+
     static class WatchDog {
-        
+
         Thread thread;
-        
+
         void start() {
             thread = new Thread(new Runnable() {
                 public void run() {
@@ -187,40 +214,14 @@ public class AgentJob {
             thread.setDaemon(false);
             thread.start();
         }
-        
+
         void stop() {
             thread.interrupt();
             try {
                 thread.join();
                 logger.info("Heartbeat stopped");
             } catch (InterruptedException ie) {
-                // 
-            }
-        }
-        
-    }
-    
-    private class SimpleStateMonitor implements ZookeeperStateMonitor {
-
-        public void notity(ZookeeperState state) {
-            switch (state) {
-                case DISCONNECTED:
-                    logger.info("Reconnecting because of server disconnected");
-                    heartbeatHandler.setActive(false);
-                    break;
-                case EXPIRED:
-                    logger.info("Reconnecting because of expired session");
-                    heartbeatHandler.setActive(false);
-                    zookeeperService.connect();
-                    break;
-                case CONNECTED:
-                    logger.info("Successfully connected to zookeeper server");
-                    if (!heartbeatHandler.isActive()) {
-                        registerHeartbeat();
-                    }
-                    break;
-                 default:
-                     logger.warn("Unhandled state in StateMonitor: " + state);
+                //
             }
         }
 

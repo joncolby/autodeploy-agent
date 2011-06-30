@@ -2,10 +2,11 @@ package de.mobile.siteops.autodeploy;
 
 import org.apache.log4j.Logger;
 
-import de.mobile.siteops.zookeeper.ZookeeperNodeHandler;
-import de.mobile.siteops.zookeeper.ZookeeperService;
+import de.mobile.zookeeper.AbstractNodeHandler;
+import de.mobile.zookeeper.ZookeeperNode;
+import de.mobile.zookeeper.ZookeeperService;
 
-public class RestartHandler implements ZookeeperNodeHandler {
+public class RestartHandler extends AbstractNodeHandler {
 
     public static final String RESTART_NODE_PREFIX = "/control/restart/";
 
@@ -13,19 +14,19 @@ public class RestartHandler implements ZookeeperNodeHandler {
     
     private final ZookeeperService zookeeperService;
     
-    private final String node;
+    private final String nodeName;
     
     public RestartHandler(String node, ZookeeperService zookeeperService) {
         this.zookeeperService = zookeeperService;
-        this.node = node;
+        this.nodeName = node;
     }
     
-    public void onNodeDeleted(String node) {
+    public void onNodeDeleted(ZookeeperNode node) {
         // not important in this usecase
         logger.debug("Node '" + node + "' has been deleted");
     }
 
-    public void onNodeData(String node, Object data) {
+    public void onNodeData(ZookeeperNode node, Object data) {
         logger.info("Restart requested, shutting down application");
         zookeeperService.deleteNode(node, false);
         zookeeperService.shutdown();
@@ -33,7 +34,7 @@ public class RestartHandler implements ZookeeperNodeHandler {
     }
 
     public String getNodeName() {
-        return node;
+        return nodeName;
     }
 
 }

@@ -28,6 +28,9 @@ public class NodeConfig {
     
     @XmlElement(name = "keepdata")
     private Boolean keepData;
+    
+    @XmlElement(name = "keepScriptOutput")
+    private Boolean keepScriptOutput;
 
     private List<String> scriptArguments = new ArrayList<String>();
     
@@ -83,6 +86,14 @@ public class NodeConfig {
         this.keepData = keepData;
     }
 
+    public Boolean getKeepScriptOutput() {
+        return keepScriptOutput != null ? keepScriptOutput : false;
+    }
+    
+    public void setKeepScriptOutput(Boolean keepScriptOutput) {
+        this.keepScriptOutput = keepScriptOutput;
+    }
+    
     public String getNode() {
         return prefix + (name != null ? "/" + name : "");
     }
@@ -104,6 +115,7 @@ public class NodeConfig {
         sb.append("script: ").append(nullSafe(script)).append(", ");
         sb.append("dataDir: ").append(nullSafe(dataDir)).append(", ");
         sb.append("keepData: ").append(nullSafe(keepData)).append(", ");
+        sb.append("keepScriptOutput: ").append(nullSafe(keepScriptOutput)).append(", ");
         sb.append("node: ").append(nullSafe(getNode()));
         return sb.toString();
     }

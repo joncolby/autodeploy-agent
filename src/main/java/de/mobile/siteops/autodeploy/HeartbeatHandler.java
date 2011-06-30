@@ -2,10 +2,11 @@ package de.mobile.siteops.autodeploy;
 
 import org.apache.log4j.Logger;
 
-import de.mobile.siteops.zookeeper.ZookeeperNodeHandler;
-import de.mobile.siteops.zookeeper.ZookeeperService;
+import de.mobile.zookeeper.AbstractNodeHandler;
+import de.mobile.zookeeper.ZookeeperNode;
+import de.mobile.zookeeper.ZookeeperService;
 
-public class HeartbeatHandler implements ZookeeperNodeHandler {
+public class HeartbeatHandler extends AbstractNodeHandler {
 
     private static Logger logger = Logger.getLogger(HeartbeatHandler.class.getName());
 
@@ -13,7 +14,7 @@ public class HeartbeatHandler implements ZookeeperNodeHandler {
 
     static final String HEARTBEAT_NODE_PREFIX = "/heartbeat/";
     
-    private final String node;
+    private final String nodeName;
     
     private final  ZookeeperService zookeeperService;
     
@@ -24,7 +25,7 @@ public class HeartbeatHandler implements ZookeeperNodeHandler {
     private volatile String lastData = "";
     
     public HeartbeatHandler(String nodeName, ZookeeperService zookeeperService) {
-        this.node = nodeName;
+        this.nodeName = nodeName;
         this.zookeeperService = zookeeperService;
         instance = this;
         
@@ -44,26 +45,26 @@ public class HeartbeatHandler implements ZookeeperNodeHandler {
     
     public void heartbeat() {
         lastData = String.valueOf(System.currentTimeMillis());
-        zookeeperService.writeData(node, lastData);
-        logger.debug("Sent heartbeat to node '" + node + "'");
+        getNode().setData(lastData);
+        if (logger.isDebugEnabled()) logger.debug("Sent heartbeat to node '" + getNode() + "'");
     }
 
     public void refresh() {
-        zookeeperService.refresh(node);
+        getNode().refresh();
     }
     
     public String getNodeName() {
-        return node;
+        return nodeName;
     }
     
-    public void onNodeDeleted(String node) {
+    public void onNodeDeleted(ZookeeperNode node) {
         // someone deleted our heartbeat node? recreate it
         zookeeperService.unregisterNode(node);
         zookeeperService.createNode(this);
         heartbeat();
     }
 
-    public void onNodeData(String node, Object data) {
+    public void onNodeData(ZookeeperNode node, Object data) {
         String received = (String) data;
         if (!received.equals(lastData) && received.length() > 0) {
             logger.warn("Data received on heartbeat node?! : " + (String) data);

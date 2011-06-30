@@ -7,5 +7,6 @@
 		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
 		<datadir>/opt/autodeploy/tmp</datadir>
 		<keepdata>true</keepdata>
+		<keepScriptOutput>true</keepScriptOutput>
 	</node>
 </nodes>
