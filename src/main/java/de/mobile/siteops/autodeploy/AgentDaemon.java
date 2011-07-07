@@ -11,7 +11,7 @@ public class AgentDaemon {
 
     private static Logger logger = Logger.getLogger(AgentDaemon.class.getName());
 
-    private static final String VERSION = "0.6";
+    private static final String VERSION = "0.7";
     
     private static AgentJob getAgentJob(String[] args) throws ConfigurationInvalidException {
         Configuration config = new Configuration();

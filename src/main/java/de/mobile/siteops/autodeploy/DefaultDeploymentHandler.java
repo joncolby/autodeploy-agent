@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import de.mobile.siteops.autodeploy.StatusHandler.StatusType;
 import de.mobile.siteops.autodeploy.config.NodeConfig;
 import de.mobile.siteops.executor.ProcessExitCode;
 import de.mobile.siteops.executor.ProcessHandler;
@@ -27,6 +26,12 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
     private static Logger logger = Logger.getLogger(DefaultDeploymentHandler.class.getName());
 
+    public static enum StatusType {
+        SCRIPT_INFO,
+        SCRIPT_ERROR,
+        AGENT_ERROR
+    };
+
     static final String BASE_DEPLOYMENT_NODE = "/deploymentQueue/";
 
     private static final String KEY_DEPLOYMENTPLAN_FILE = "deploymentPlanFile";
@@ -36,8 +41,6 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
     private final ZookeeperService zookeeperService;
 
     private final ProcessService processService;
-
-    private final StatusHandler statusHandler;
 
     private final File dataDir;
 
@@ -51,21 +54,23 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
     private boolean processing = false;
 
-    public DefaultDeploymentHandler(NodeConfig nodeConfig, StatusHandler statusHandler,
-            ZookeeperService zookeeperService) {
+    public DefaultDeploymentHandler(NodeConfig nodeConfig, ZookeeperService zookeeperService) {
         this.zookeeperService = zookeeperService;
-        this.nodeName = nodeConfig.getNode();
+        this.nodeName = DefaultDeploymentHandler.BASE_DEPLOYMENT_NODE + nodeConfig.getNode();
         this.dataDir = nodeConfig.getDataDirAsFile();
         this.keepData = nodeConfig.getKeepData();
         this.keepScriptOutput = nodeConfig.getKeepScriptOutput();
         this.scriptArguments = nodeConfig.getScriptArguments();
-        this.statusHandler = statusHandler;
         this.processService = new ProcessService(nodeConfig.getScript(), nodeConfig.getIdentifier(),
                 new DefaultProcessNotifier());
     }
 
     public String getNodeName() {
         return nodeName;
+    }
+
+    public void onNodeCreated(ZookeeperNode node) {
+        // nothing
     }
 
     public void onNodeDeleted(ZookeeperNode node) {
@@ -79,23 +84,30 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
     }
 
     public void onNodeData(ZookeeperNode node, Object data) {
+
+        if (logger.isDebugEnabled()) logger.debug("Received on node " + node + ": " + data);
+
         if (processing) {
             if (processService.isProcessing()) {
-                logger.warn("Script '" + processService.getCommand() + "' still running, terminating");
+                logger.warn("[" + processService.getIdentifier() + "] [Node:" + node + "] Script '"
+                        + processService.getCommand() + "' still running, terminating");
                 processService.getHandler().killProcess();
             }
         }
         String date = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 
-        String deploymentPlanFileName = "node_data_" + date + ".txt";
-        File deploymentPlanFile = createFile(deploymentPlanFileName, (String) data,
+        String identifier = processService.getIdentifier();
+        
+        String deploymentPlanFileName = "node_" + processService.getIdentifier() + "_data_" + date + ".txt";
+        File deploymentPlanFile = createFile(deploymentPlanFileName, identifier, (String) data,
             "Cannot write temporary node data, removing node");
         if (deploymentPlanFile == null) return;
 
         FileOutputStream outputStream = null;
         if (keepScriptOutput) {
-            String deployScriptOutputFileName = "deployscript_output_" + date + ".txt";
-            File deployScriptOutputFile = createFile(deployScriptOutputFileName, null,
+            String deployScriptOutputFileName = "deployscript_" + processService.getIdentifier() + "_output_" + date
+                    + ".txt";
+            File deployScriptOutputFile = createFile(deployScriptOutputFileName, identifier, null,
                 "Cannot write temporary node data, removing node");
             if (deployScriptOutputFile == null) return;
 
@@ -122,12 +134,12 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             processing = true;
         } catch (IOException e) {
             String errorMessage = "Cannot execute script '" + processService.getCommand() + "'";
-            statusHandler.updateStatus(StatusType.AGENT_ERROR, errorMessage);
+            updateStatus(StatusType.AGENT_ERROR, processService.getIdentifier(), errorMessage);
             logger.error(errorMessage);
         }
     }
 
-    private File createFile(String fileName, String data, String errorMessage) {
+    private File createFile(String fileName, String identifier, String data, String errorMessage) {
         try {
             File file;
             if (dataDir != null) {
@@ -144,10 +156,15 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             return file;
         } catch (IOException e) {
             logger.error(errorMessage);
-            statusHandler.updateStatus(StatusType.AGENT_ERROR, errorMessage);
+            updateStatus(StatusType.AGENT_ERROR, identifier, errorMessage);
             zookeeperService.deleteNode(getNode(), false);
             return null;
         }
+    }
+
+    public void updateStatus(StatusType statusType, String identifier, String message) {
+        String date = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date());
+        getNode().setData("{status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\"" + message + "\"}");
     }
 
     private class DefaultProcessNotifier implements ProcessNotifier {
@@ -177,8 +194,9 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             StatusType statusType = code == ProcessExitCode.OK ? StatusType.SCRIPT_INFO : StatusType.SCRIPT_ERROR;
             String message = "Deployment ended with code " + exitCode + " (" + code.getDescription() + ")";
 
-            statusHandler.updateStatus(statusType, message);
+            updateStatus(statusType, identifier, message);
 
+            sleep(500);
             processing = false;
             zookeeperService.deleteNode(getNode(), false);
         }
@@ -203,9 +221,10 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             }
 
             logger.error("Script '" + identifier + "' terminated, removing node '" + getNode() + "'");
+            updateStatus(StatusType.SCRIPT_ERROR, identifier, "Script was terminated by system or by keeper internal");
+            
+            sleep(500);
             processing = false;
-            statusHandler
-                    .updateStatus(StatusType.SCRIPT_ERROR, "Script was terminated by system or by keeper internal");
             zookeeperService.deleteNode(getNode(), false);
         }
 
@@ -216,7 +235,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             String message = date + " - " + identifier + " - " + streamType.name() + " - " + line;
             StatusType statusType = (streamType == StreamType.STDOUT ? StatusType.SCRIPT_INFO : StatusType.SCRIPT_ERROR);
-            statusHandler.updateStatus(statusType, message);
+            updateStatus(statusType, identifier, line);
 
             if (stream != null) {
                 try {
@@ -229,6 +248,12 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
                 logger.info("Received from script: " + message);
             }
 
+        }
+        
+        private void sleep(int milliseconds) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(milliseconds);
+            } catch (InterruptedException e) { }
         }
 
     }

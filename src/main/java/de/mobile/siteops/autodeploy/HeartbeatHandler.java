@@ -57,10 +57,15 @@ public class HeartbeatHandler extends AbstractNodeHandler {
         return nodeName;
     }
     
+    public void onNodeCreated(ZookeeperNode node) {
+        heartbeat();
+        active = true;
+    }
+    
     public void onNodeDeleted(ZookeeperNode node) {
         // someone deleted our heartbeat node? recreate it
         zookeeperService.unregisterNode(node);
-        zookeeperService.createNode(this);
+        zookeeperService.createNode(this, true);
         heartbeat();
     }
 

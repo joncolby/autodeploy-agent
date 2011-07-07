@@ -39,6 +39,8 @@ public class AgentJob {
     private ShutdownHook shutdownHook;
 
     private String environmentAndHost;
+    
+    private boolean initialized = false;
 
     public AgentJob(Configuration config) throws ConfigurationInvalidException {
         this.config = config;
@@ -72,7 +74,7 @@ public class AgentJob {
                 throw new RuntimeException(e);
             }
 
-            defaultNodePrefix = DefaultDeploymentHandler.BASE_DEPLOYMENT_NODE + environmentAndHost;
+            defaultNodePrefix = environmentAndHost;
         } catch (IOException e) {
             throw new ConfigurationInvalidException("Cannot copen nodes config file");
         }
@@ -92,7 +94,7 @@ public class AgentJob {
                 File scriptFile = new File(nodeConfig.getScript());
                 if (!AgentUtils.scriptFileValid(scriptFile)) {
                     throw new ConfigurationInvalidException(
-                            "Configuration error: script file not readable or executable");
+                            "Configuration error: script file '" + scriptFile + "' not readable or executable");
                 }
             } else {
                 throw new ConfigurationInvalidException("Configuration error: script is not specified");
@@ -122,25 +124,18 @@ public class AgentJob {
     }
 
     private void initializeNodes() {
+        if (initialized) return;
         String heartbeatNode = HeartbeatHandler.HEARTBEAT_NODE_PREFIX + environmentAndHost;
         heartbeatHandler = new HeartbeatHandler(heartbeatNode, zookeeperService);
-        if (zookeeperService.createNode(heartbeatHandler)) {
-            heartbeatHandler.setActive(true);
-            heartbeatHandler.heartbeat();
-        }
+        zookeeperService.createNode(heartbeatHandler, true);
 
         for (NodeConfig nodeConfig : nodesConfig.getNodes()) {
-
-            String statusNode = StatusHandler.STATUS_NODE_PREFIX + environmentAndHost;
-            StatusHandler statusHandler = new StatusHandler(statusNode, zookeeperService);
-            zookeeperService.createNode(statusHandler);
-
-            DefaultDeploymentHandler deploymentHandler = new DefaultDeploymentHandler(nodeConfig, statusHandler,
-                    zookeeperService);
+            DefaultDeploymentHandler deploymentHandler = new DefaultDeploymentHandler(nodeConfig, zookeeperService);
             zookeeperService.registerNode(deploymentHandler);
         }
         String restartNode = RestartHandler.RESTART_NODE_PREFIX + environmentAndHost;
         zookeeperService.registerNode(new RestartHandler(restartNode, zookeeperService));
+        initialized = true;
     }
 
     public synchronized void stop(int errorCode) {
@@ -164,6 +159,7 @@ public class AgentJob {
                     break;
                 case EXPIRED:
                     logger.info("Reconnecting because of expired session");
+                    initialized = false;
                     heartbeatHandler.setActive(false);
                     zookeeperService.connect();
                     break;
