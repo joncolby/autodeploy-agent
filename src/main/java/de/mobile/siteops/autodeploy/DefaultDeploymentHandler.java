@@ -157,6 +157,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
         } catch (IOException e) {
             logger.error(errorMessage);
             updateStatus(StatusType.AGENT_ERROR, identifier, errorMessage);
+            sleep(500);
             zookeeperService.deleteNode(getNode(), false);
             return null;
         }
@@ -249,13 +250,14 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             }
 
         }
-        
-        private void sleep(int milliseconds) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(milliseconds);
-            } catch (InterruptedException e) { }
-        }
 
     }
+    
+    private static void sleep(int milliseconds) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(milliseconds);
+        } catch (InterruptedException e) { }
+    }
+    
 
 }
