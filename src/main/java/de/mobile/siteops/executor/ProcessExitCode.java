@@ -14,6 +14,7 @@ public enum ProcessExitCode {
     SIGPIPE(13, "Broken pipe: write to pipe with no readers"),
     SIGALRM(14, "Timer signal from alarm(2)"),
     SIGTERM(15, "Termination signal"),
+    SIGSHUT(143, "Process terminated by owner"),
     UNKNOWN(65536, "Unknown exit code");
     
     private final int code;
