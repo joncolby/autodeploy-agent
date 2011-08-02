@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <nodes>
 	<node>
+		<prefix>local/ibartel-cron-1</prefix>
+		<!-- <name>deployFull</name>  -->
+		<identifier>deploy cron 1</identifier>
+		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
+		<datadir>/opt/autodeploy/tmp</datadir>
+		<keepdata>true</keepdata>
+		<keepScriptOutput>true</keepScriptOutput>
+	</node>
+	<node>
+		<prefix>local/ibartel-cron-2</prefix>
+		<!-- <name>deployFull</name>  -->
+		<identifier>deploy cron 2</identifier>
+		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
+		<datadir>/opt/autodeploy/tmp</datadir>
+		<keepdata>true</keepdata>
+		<keepScriptOutput>true</keepScriptOutput>
+	</node>
+	<node>
 		<prefix>local/ibartel-devel-3</prefix>
 		<!-- <name>deployFull</name>  -->
 		<identifier>deployment 3</identifier>
@@ -13,7 +31,7 @@
 		<prefix>local/ibartel-devel-2</prefix>
 		<!-- <name>deployFull</name>  -->
 		<identifier>deployment 2</identifier>
-		<script>/opt/autodeploy/bin/deploy_wrapper_error.sh</script>
+		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
 		<datadir>/opt/autodeploy/tmp</datadir>
 		<keepdata>true</keepdata>
 		<keepScriptOutput>true</keepScriptOutput>
@@ -22,6 +40,24 @@
 		<prefix>local/ibartel-devel</prefix>
 		<!-- <name>deployFull</name>  -->
 		<identifier>deployment 1</identifier>
+		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
+		<datadir>/opt/autodeploy/tmp</datadir>
+		<keepdata>true</keepdata>
+		<keepScriptOutput>true</keepScriptOutput>
+	</node>
+	<node>
+		<prefix>local/ibartel-raupe-1</prefix>
+		<!-- <name>deployFull</name>  -->
+		<identifier>deployment raupe</identifier>
+		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
+		<datadir>/opt/autodeploy/tmp</datadir>
+		<keepdata>true</keepdata>
+		<keepScriptOutput>true</keepScriptOutput>
+	</node>
+	<node>
+		<prefix>local/ibartel-static-1</prefix>
+		<!-- <name>deployFull</name>  -->
+		<identifier>deployment static</identifier>
 		<script>/opt/autodeploy/bin/deploy_wrapper.sh</script>
 		<datadir>/opt/autodeploy/tmp</datadir>
 		<keepdata>true</keepdata>

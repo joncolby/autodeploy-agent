@@ -194,9 +194,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
         public void processEnded(String identifier, Map<String, Object> additionalData, int exitCode) {
             // sleep a second otherwise the last output from onProcessOutput is received after processEnded
-            try {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException e1) {}
+            sleep(1000);
 
             File tempFile = (File) additionalData.get(KEY_DEPLOYMENTPLAN_FILE);
 

@@ -34,8 +34,6 @@ public class AgentJob {
 
     private WatchDog watcher = new WatchDog();
 
-    private HeartbeatHandler heartbeatHandler;
-
     private ShutdownHook shutdownHook;
 
     private String environmentAndHost;
@@ -125,9 +123,6 @@ public class AgentJob {
 
     private void initializeNodes() {
         if (initialized) return;
-        String heartbeatNode = HeartbeatHandler.HEARTBEAT_NODE_PREFIX + environmentAndHost;
-        heartbeatHandler = new HeartbeatHandler(heartbeatNode, zookeeperService);
-        zookeeperService.createNode(heartbeatHandler, true);
 
         for (NodeConfig nodeConfig : nodesConfig.getNodes()) {
             DefaultDeploymentHandler deploymentHandler = new DefaultDeploymentHandler(nodeConfig, zookeeperService);
@@ -155,18 +150,13 @@ public class AgentJob {
             switch (state) {
                 case DISCONNECTED:
                     logger.info("Reconnecting because of server disconnected");
-                    heartbeatHandler.setActive(false);
                     break;
                 case EXPIRED:
                     logger.info("Reconnecting because of expired session");
                     initialized = false;
-                    heartbeatHandler.setActive(false);
                     zookeeperService.connect();
                     break;
                 case CONNECTED:
-                    // try {
-                    // TimeUnit.SECONDS.sleep(2);
-                    // } catch (InterruptedException e) {}
                     logger.info("Successfully connected to zookeeper server");
                     initializeNodes();
                     break;
@@ -199,8 +189,7 @@ public class AgentJob {
                 public void run() {
                     try {
                         while (true) {
-                            Thread.sleep(TimeUnit.SECONDS.toMillis(HeartbeatHandler.HEARTBEAT_INTERVAL));
-                            HeartbeatHandler.getInstance().heartbeat();
+                            Thread.sleep(TimeUnit.SECONDS.toMillis(10));
                         }
                     } catch (InterruptedException interrupt) {
                         return; // graceful return
@@ -215,7 +204,7 @@ public class AgentJob {
             thread.interrupt();
             try {
                 thread.join();
-                logger.info("Heartbeat stopped");
+                logger.info("Thread stopped");
             } catch (InterruptedException ie) {
                 //
             }
