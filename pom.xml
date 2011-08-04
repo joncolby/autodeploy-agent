@@ -15,12 +15,12 @@
 	<distributionManagement>
 		<repository>
 			<id>deployment.repo.mobile.releases</id>
-			<url>http://maven.corp.mobile.de/archiva/repository/hosted-mobile-deployment-releases</url>
+			<url>http://maven.corp.mobile.de/archiva/repository/autodeployment-releases/</url>
 		</repository>
 
 		<snapshotRepository>
 			<id>deployment.repo.mobile.snapshots</id>
-			<url>http://maven.corp.mobile.de/archiva/repository/hosted-mobile-deployment-releases</url>
+			<url>http://maven.corp.mobile.de/archiva/repository/autodeployment-releases/</url>
 		</snapshotRepository>
 
 	</distributionManagement>
