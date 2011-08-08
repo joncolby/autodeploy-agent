@@ -57,6 +57,10 @@ public class HeartbeatHandler extends AbstractNodeHandler {
         return nodeName;
     }
     
+    public void onNodeInitialized(ZookeeperNode node) {
+        // nothing to do here
+    }
+    
     public void onNodeCreated(ZookeeperNode node) {
         heartbeat();
         active = true;

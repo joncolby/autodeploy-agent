@@ -129,7 +129,7 @@ public class AgentJob {
             zookeeperService.registerNode(deploymentHandler);
         }
         String restartNode = RestartHandler.RESTART_NODE_PREFIX + environmentAndHost;
-        zookeeperService.registerNode(new RestartHandler(restartNode, zookeeperService));
+        zookeeperService.createNode(new RestartHandler(restartNode, zookeeperService), true);
         initialized = true;
     }
 

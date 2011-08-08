@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +43,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
     private final ZookeeperService zookeeperService;
 
     private final ProcessService processService;
-    
+
     private final String identifier;
 
     private final File dataDir;
@@ -73,8 +74,12 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
         return nodeName;
     }
 
+    public void onNodeInitialized(ZookeeperNode node) {
+        // nothing to do here
+    }
+    
     public void onNodeCreated(ZookeeperNode node) {
-        // nothing
+        // nothing to do here
     }
 
     public void onNodeDeleted(ZookeeperNode node) {
@@ -99,11 +104,11 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
                 return;
             }
         }
-        
+
         if (processing) {
             if (processService.isProcessing()) {
-                logger.warn("[" + identifier + "] [Node:" + node + "] Script '"
-                        + processService.getCommand() + "' still running, terminating");
+                logger.warn("[" + identifier + "] [Node:" + node + "] Script '" + processService.getCommand()
+                        + "' still running, terminating");
                 processService.getHandler().killProcess();
             }
         }
@@ -116,8 +121,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
         FileOutputStream outputStream = null;
         if (keepScriptOutput) {
-            String deployScriptOutputFileName = "deployscript_" + identifier + "_output_" + date
-                    + ".txt";
+            String deployScriptOutputFileName = "deployscript_" + identifier + "_output_" + date + ".txt";
             File deployScriptOutputFile = createFile(deployScriptOutputFileName, identifier, null,
                 "Cannot write temporary node data, removing node");
             if (deployScriptOutputFile == null) return;
@@ -138,8 +142,8 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
                     .addAdditionalData(KEY_SCRIPTFILE_OUTPUTSTREAM, outputStream) //
                     .execute(); //
 
-            logger.info("Spawned script '" + identifier + "', command '"
-                    + processService.getCommand() + "' in background");
+            logger.info("Spawned script '" + identifier + "', command '" + processService.getCommand()
+                    + "' in background");
 
             processHandler.waitAsync();
             processing = true;
@@ -158,7 +162,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
                 processService.getHandler().killProcess();
             }
         }
-        
+
     }
 
     private File createFile(String fileName, String identifier, String data, String errorMessage) {
@@ -187,7 +191,9 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
     public void updateStatus(StatusType statusType, String identifier, String message) {
         String date = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date());
-        getNode().setData("{status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\"" + message + "\"}");
+        getNode().setData(
+            "{status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\""
+                    + escape(message) + "\"}");
     }
 
     private class DefaultProcessNotifier implements ProcessNotifier {
@@ -245,7 +251,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
             logger.error("Script '" + identifier + "' terminated, removing node '" + getNode() + "'");
             updateStatus(StatusType.SCRIPT_ERROR, identifier, "Script was terminated by system or by keeper internal");
-            
+
             sleep(500);
             processing = false;
             zookeeperService.deleteNode(getNode(), false);
@@ -274,12 +280,79 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
         }
 
     }
-    
+
     private static void sleep(int milliseconds) {
         try {
             TimeUnit.MILLISECONDS.sleep(milliseconds);
-        } catch (InterruptedException e) { }
+        } catch (InterruptedException e) {}
     }
-    
+
+    private static String escape(String message) {
+        if (message == null || message.length() == 0) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < message.length(); i++) {
+            char ch = message.charAt(i);
+
+            if (ch > 0xfff) {
+                sb.append("\\u" + hex(ch));
+            } else if (ch > 0xff) {
+                sb.append("\\u0" + hex(ch));
+            } else if (ch > 0x7f) {
+                sb.append("\\u00" + hex(ch));
+            } else if (ch < 32) {
+                switch (ch) {
+                    case '\b':
+                        sb.append('\\').append('b') ;
+                        break;
+                    case '\n':
+                        sb.append('\\').append('n');
+                        break;
+                    case '\t':
+                        sb.append('\\').append('t');
+                        break;
+                    case '\f':
+                        sb.append('\\').append('f');
+                        break;
+                    case '\r':
+                        sb.append('\\').append('r');
+                        break;
+                    default:
+                        if (ch > 0xf) {
+                            sb.append("\\u00" + hex(ch));
+                        } else {
+                            sb.append("\\u000" + hex(ch));
+                        }
+                        break;
+                }
+            } else {
+                switch (ch) {
+                    case '\'':
+                        sb.append('\\').append('\'');
+                        break;
+                    case '"':
+                        sb.append('\\').append('"');
+                        break;
+                    case '\\':
+                        sb.append('\\').append('\\');
+                        break;
+                    case '/':
+                        sb.append('\\').append('/');
+                        break;
+                    default:
+                        sb.append(ch);
+                        break;
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private static String hex(char ch) {
+        return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
+    }
 
 }

@@ -21,6 +21,10 @@ public class RestartHandler extends AbstractNodeHandler {
         this.nodeName = node;
     }
 
+    public void onNodeInitialized(ZookeeperNode node) {
+        // nothing to do here
+    }
+    
     public void onNodeCreated(ZookeeperNode node) {
         // nothing to do here
     }
