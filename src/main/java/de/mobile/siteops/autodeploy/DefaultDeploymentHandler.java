@@ -91,6 +91,10 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             }
         }
     }
+    
+    public void onNodeUnregistered(ZookeeperNode node) {
+        onNodeDeleted(node);
+    }
 
     public void onNodeData(ZookeeperNode node, Object data) {
 
@@ -110,6 +114,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
                 logger.warn("[" + identifier + "] [Node:" + node + "] Script '" + processService.getCommand()
                         + "' still running, terminating");
                 processService.getHandler().killProcess();
+                updateStatus(StatusType.AGENT_INFO, identifier, "Killed already running deploy script");
             }
         }
         String date = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -147,6 +152,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
             processHandler.waitAsync();
             processing = true;
+            updateStatus(StatusType.AGENT_INFO, identifier, "Deploymentscript executed");
         } catch (IOException e) {
             String errorMessage = "Cannot execute script '" + processService.getCommand() + "'";
             updateStatus(StatusType.AGENT_ERROR, identifier, errorMessage);
@@ -266,6 +272,8 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             StatusType statusType = (streamType == StreamType.STDOUT ? StatusType.SCRIPT_INFO : StatusType.SCRIPT_ERROR);
             updateStatus(statusType, identifier, line);
 
+            // [AUTODEPLOY:LEVEL] dsfsdfsdadsfdsfdfs
+            
             if (stream != null) {
                 try {
                     stream.write((message + "\n").getBytes());

@@ -42,7 +42,7 @@
 		<dependency>
 			<groupId>de.mobile.zookeeper</groupId>
 			<artifactId>mobile-zookeeper-service</artifactId>
-			<version>0.9</version>
+			<version>0.10</version>
 		</dependency>
 
 		<dependency>

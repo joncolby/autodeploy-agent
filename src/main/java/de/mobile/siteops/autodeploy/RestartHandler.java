@@ -29,6 +29,10 @@ public class RestartHandler extends AbstractNodeHandler {
         // nothing to do here
     }
     
+    public void onNodeUnregistered(ZookeeperNode node) {
+        // nothing to do here
+    }
+    
     public void onNodeDeleted(ZookeeperNode node) {
         // not important in this usecase
         logger.debug("Node '" + node + "' has been deleted");
