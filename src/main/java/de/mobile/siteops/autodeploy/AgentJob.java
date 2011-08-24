@@ -154,6 +154,7 @@ public class AgentJob {
                 case EXPIRED:
                     logger.info("Reconnecting because of expired session");
                     initialized = false;
+                    zookeeperService.shutdown();
                     zookeeperService.connect();
                     break;
                 case CONNECTED:
