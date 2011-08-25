@@ -1,5 +1,7 @@
 package de.mobile.siteops.autodeploy;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.log4j.Logger;
 
 import de.mobile.zookeeper.AbstractNodeHandler;
@@ -26,7 +28,9 @@ public class RestartHandler extends AbstractNodeHandler {
     }
     
     public void onNodeCreated(ZookeeperNode node) {
-        // nothing to do here
+        if (node != null) {
+            node.setData(AgentDaemon.VERSION);
+        }
     }
     
     public void onNodeUnregistered(ZookeeperNode node) {
@@ -49,4 +53,10 @@ public class RestartHandler extends AbstractNodeHandler {
         return nodeName;
     }
 
+    private static void sleep(int milliseconds) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(milliseconds);
+        } catch (InterruptedException e) {}
+    }
+    
 }
