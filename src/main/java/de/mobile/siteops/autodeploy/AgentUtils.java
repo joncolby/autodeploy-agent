@@ -40,7 +40,14 @@ public final class AgentUtils {
     }
 
     public static String getEnvironmentAndHost() throws ConfigurationInvalidException {
-        InetAddress address = getInetAddressForInterface("eth0");
+        InetAddress address = null; 
+        address = getInetAddressForInterface("bond0");
+        if (address == null) {
+            address = getInetAddressForInterface("eth0");
+        }
+        if (address == null) {
+            throw new ConfigurationInvalidException("Could not obtain interface bond0 or eth0");
+        }
         String environment = mapFromIpAddress(address.getHostAddress());
         String hostName = address.getHostName();
         if (Pattern.matches("[0-9\\.]+", hostName)) {
@@ -93,6 +100,9 @@ public final class AgentUtils {
     private static InetAddress getInetAddressForInterface(String interfaceName) throws ConfigurationInvalidException {
         try {
             NetworkInterface iface = NetworkInterface.getByName(interfaceName);
+            if (iface == null) {
+                return null;
+            }
             for (InterfaceAddress interfaceAddress : iface.getInterfaceAddresses()) {
                 if (interfaceAddress.getAddress().isLinkLocalAddress()) continue;
                 return interfaceAddress.getAddress();
