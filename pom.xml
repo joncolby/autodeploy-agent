@@ -120,8 +120,8 @@
 	</reporting>
 
 	<scm>
-		<connection>scm:git:git@git.corp.mobile.de:infrastructure/autodeploy-agent-new.git</connection>
-		<developerConnection>scm:git:git@git.corp.mobile.de:infrastructure/autodeploy-agent-new.git</developerConnection>
+		<connection>scm:git:git@git.corp.mobile.de:autodeploy/autodeploy-agent.git</connection>
+		<developerConnection>scm:git:git@git.corp.mobile.de:autodeploy/autodeploy-agent.git</developerConnection>
 	</scm>
 
 </project>
