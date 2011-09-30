@@ -196,7 +196,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
     }
 
     public void updateStatus(StatusType statusType, String identifier, String message) {
-        String date = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date());
+        String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         getNode().setData(
             "{status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\""
                     + escape(message) + "\"}");
@@ -204,6 +204,8 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
     private class DefaultProcessNotifier implements ProcessNotifier {
 
+        private boolean processOutputReceived = false;
+        
         public void processEnded(String identifier, Map<String, Object> additionalData, int exitCode) {
             // sleep a second otherwise the last output from onProcessOutput is received after processEnded
             sleep(1000);
@@ -224,10 +226,12 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             ProcessExitCode code = ProcessExitCode.getByCode(exitCode);
             logger.info("Script '" + identifier + "' ended with code " + exitCode + " (" + code.getDescription() + ")");
 
-            StatusType statusType = code == ProcessExitCode.OK ? StatusType.SCRIPT_INFO : StatusType.SCRIPT_ERROR;
-            String message = "Deployment ended with code " + exitCode + " (" + code.getDescription() + ")";
+            if (!processOutputReceived && code != ProcessExitCode.OK) {
+                StatusType statusType = code == ProcessExitCode.OK ? StatusType.SCRIPT_INFO : StatusType.SCRIPT_ERROR;
+                String message = "Deployment ended with code " + exitCode + " (" + code.getDescription() + ")";
 
-            updateStatus(statusType, identifier, message);
+                updateStatus(statusType, identifier, message);
+            }
 
             processing = false;
             if (getNode().exists()) {
@@ -265,6 +269,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
         public void onProcessOutput(String identifier, StreamType streamType, String line,
             Map<String, Object> additionalData) {
+            
             FileOutputStream stream = (FileOutputStream) additionalData.get(KEY_SCRIPTFILE_OUTPUTSTREAM);
 
             String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
@@ -285,6 +290,9 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
                 logger.info("Received from script: " + message);
             }
 
+            if (!processOutputReceived) {
+                processOutputReceived = true;
+            }
         }
 
     }
