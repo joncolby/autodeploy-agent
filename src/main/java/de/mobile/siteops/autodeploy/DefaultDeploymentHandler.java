@@ -226,7 +226,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             ProcessExitCode code = ProcessExitCode.getByCode(exitCode);
             logger.info("Script '" + identifier + "' ended with code " + exitCode + " (" + code.getDescription() + ")");
 
-            if (!processOutputReceived && code != ProcessExitCode.OK) {
+            if (code == ProcessExitCode.OK || !processOutputReceived) {
                 StatusType statusType = code == ProcessExitCode.OK ? StatusType.SCRIPT_INFO : StatusType.SCRIPT_ERROR;
                 String message = "Deployment ended with code " + exitCode + " (" + code.getDescription() + ")";
 
