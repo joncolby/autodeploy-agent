@@ -42,7 +42,7 @@ public final class AgentUtils {
     public static String getEnvironmentAndHost() throws ConfigurationInvalidException {
         InetAddress address = null;
 
-        String[] interFaces = { "bond0", "eth0", "bnxe0", "aggr1" };
+        String[] interFaces = { "bond0", "eth0", "bnxe0", "aggr1","bnx0" };
 
         for (String i: interFaces) {
                 address = getInetAddressForInterface(i);
@@ -57,7 +57,7 @@ public final class AgentUtils {
         //}
 
         if (address == null) {
-            throw new ConfigurationInvalidException("Could not obtain interface bond0 or eth0");
+            throw new ConfigurationInvalidException("Could not obtain IP address from interfaces");
         }
         String environment = mapFromIpAddress(address.getHostAddress());
         String hostName = address.getHostName();
