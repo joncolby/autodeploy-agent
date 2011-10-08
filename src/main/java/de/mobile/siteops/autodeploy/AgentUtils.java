@@ -40,11 +40,22 @@ public final class AgentUtils {
     }
 
     public static String getEnvironmentAndHost() throws ConfigurationInvalidException {
-        InetAddress address = null; 
-        address = getInetAddressForInterface("bond0");
-        if (address == null) {
-            address = getInetAddressForInterface("eth0");
+        InetAddress address = null;
+
+        String[] interFaces = { "bond0", "eth0", "bnxe0", "aggr1" };
+
+        for (String i: interFaces) {
+                address = getInetAddressForInterface(i);
+                if ( address != null ) {
+                    break;
+                }
         }
+
+        //address = getInetAddressForInterface("bond0");
+        //if (address == null) {
+        //    address = getInetAddressForInterface("eth0");
+        //}
+
         if (address == null) {
             throw new ConfigurationInvalidException("Could not obtain interface bond0 or eth0");
         }
@@ -76,7 +87,7 @@ public final class AgentUtils {
 
         String environment = null;
 
-        if (dataCenter.equals(45) || dataCenter.equals(46) || dataCenter.equals(47)) {
+        if (dataCenter.equals(45) || dataCenter.equals(46) || dataCenter.equals(47) || dataCenter.equals(38) ) {
             environment = "Production";
         } else if (dataCenter.equals(44)) {
             if (subEnvironment.equals(230)) {
