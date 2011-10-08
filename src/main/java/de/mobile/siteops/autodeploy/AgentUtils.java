@@ -42,7 +42,8 @@ public final class AgentUtils {
     public static String getEnvironmentAndHost() throws ConfigurationInvalidException {
         InetAddress address = null;
 
-        String[] interFaces = { "bond0", "eth0", "bnxe0", "aggr1","bnx0" };
+        // server may have multiple interfaces.  these should be checked first
+        String[] interFaces = { "bond0", "eth0", "bnxe0", "aggr1", "bnx0", "e1000g0" };
 
         for (String i: interFaces) {
                 address = getInetAddressForInterface(i);
