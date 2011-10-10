@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -29,11 +31,14 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
     public static enum StatusType {
         SCRIPT_INFO,
+        SCRIPT_WARN,
         SCRIPT_ERROR,
         AGENT_ERROR,
         AGENT_INFO
     };
 
+    private static final Pattern LOG_PATTERN = Pattern.compile("\\[AUTODEPLOY:(.+)\\] (.+)");
+    
     static final String BASE_DEPLOYMENT_NODE = "/deploymentQueue/";
 
     private static final String KEY_DEPLOYMENTPLAN_FILE = "deploymentPlanFile";
@@ -197,9 +202,9 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
     public void updateStatus(StatusType statusType, String identifier, String message) {
         String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-        getNode().setData(
-            "{status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\""
-                    + escape(message) + "\"}");
+        String msg = "{status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\""
+                + escape(message) + "\"}"; 
+        getNode().setData(msg);
     }
 
     private class DefaultProcessNotifier implements ProcessNotifier {
@@ -274,11 +279,23 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
             String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             String message = date + " - " + identifier + " - " + streamType.name() + " - " + line;
-            StatusType statusType = (streamType == StreamType.STDOUT ? StatusType.SCRIPT_INFO : StatusType.SCRIPT_ERROR);
-            updateStatus(statusType, identifier, line);
 
-            // [AUTODEPLOY:LEVEL] dsfsdfsdadsfdsfdfs
+            Matcher matcher = LOG_PATTERN.matcher(line);
+            if (matcher.find()) {
+                String logLevel = matcher.group(1);
+                String logMessage = matcher.group(2);
+                
+                StatusType statusType = StatusType.SCRIPT_ERROR;
+                if (logLevel.equals("INFO")) statusType = StatusType.SCRIPT_INFO;
+                else if (logLevel.equals("WARN")) statusType = StatusType.SCRIPT_WARN;
+                else statusType = StatusType.SCRIPT_ERROR;
+                
+                updateStatus(statusType, identifier, logMessage);
+            } else {
+                logger.warn("Received script output not in correct output format: '" + line + "'");
+            }
             
+
             if (stream != null) {
                 try {
                     stream.write((message + "\n").getBytes());
@@ -296,7 +313,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
         }
 
     }
-
+    
     private static void sleep(int milliseconds) {
         try {
             TimeUnit.MILLISECONDS.sleep(milliseconds);
