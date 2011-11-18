@@ -60,7 +60,7 @@ public final class AgentUtils {
         if (address == null) {
             throw new ConfigurationInvalidException("Could not obtain IP address from interfaces");
         }
-        String environment = mapFromIpAddress(address.getHostAddress());
+        String environment = mapEnvironmentFromIpAddress(address.getHostAddress());
         String hostName = address.getHostName();
         if (Pattern.matches("[0-9\\.]+", hostName)) {
             String fallbackHostname;
@@ -80,13 +80,16 @@ public final class AgentUtils {
         return environment + "/" + hostName;
     }
     
-    private static String mapFromIpAddress(String ipAddress) throws ConfigurationInvalidException {
+    private static String mapEnvironmentFromIpAddress(String ipAddress) throws ConfigurationInvalidException {
+        String environment = System.getenv("environment");
+        if (environment != null) {
+            return environment;
+        }
+        
         String[] ipChunks = Iterables.toArray(Splitter.on(".").omitEmptyStrings().trimResults().split(ipAddress),
             String.class);
         Integer dataCenter = Integer.valueOf(ipChunks[1]);
         Integer subEnvironment = Integer.valueOf(ipChunks[2]);
-
-        String environment = null;
 
         if (dataCenter.equals(45) || dataCenter.equals(46) || dataCenter.equals(47) || dataCenter.equals(38) ) {
             environment = "Production";

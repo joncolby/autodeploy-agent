@@ -62,6 +62,8 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
     private final String nodeName;
 
     private boolean processing = false;
+    
+    private int messageCount = 0;
 
     public DefaultDeploymentHandler(NodeConfig nodeConfig, ZookeeperService zookeeperService) {
         this.zookeeperService = zookeeperService;
@@ -202,7 +204,7 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
     public void updateStatus(StatusType statusType, String identifier, String message) {
         String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-        String msg = "{status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\""
+        String msg = "{msgnum:\"" + messageCount++ + "\",status:\"" + statusType.name() + "\",date:\"" + date + "\",identifier:\"" + identifier + "\",message:\""
                 + escape(message) + "\"}"; 
         getNode().setData(msg);
     }
@@ -239,6 +241,8 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
             }
 
             processing = false;
+            processOutputReceived = false;
+            messageCount = 0;
             if (getNode().exists()) {
                 sleep(500);
                 zookeeperService.deleteNode(getNode(), false);
@@ -269,11 +273,17 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
 
             sleep(500);
             processing = false;
+            processOutputReceived = false;
+            messageCount = 0;
             zookeeperService.deleteNode(getNode(), false);
         }
 
         public void onProcessOutput(String identifier, StreamType streamType, String line,
             Map<String, Object> additionalData) {
+            
+            if (line == null || line.length() <= 0 || line.equals("")) {
+                return;
+            }
             
             FileOutputStream stream = (FileOutputStream) additionalData.get(KEY_SCRIPTFILE_OUTPUTSTREAM);
 
@@ -286,30 +296,35 @@ public class DefaultDeploymentHandler extends AbstractNodeHandler {
                 String logMessage = matcher.group(2);
                 
                 StatusType statusType = StatusType.SCRIPT_ERROR;
-                if (logLevel.equals("INFO")) statusType = StatusType.SCRIPT_INFO;
-                else if (logLevel.equals("WARN")) statusType = StatusType.SCRIPT_WARN;
-                else statusType = StatusType.SCRIPT_ERROR;
+                if (logLevel.equals("INFO")) {
+                    statusType = StatusType.SCRIPT_INFO;
+                } else if (logLevel.equals("WARN")) {
+                    statusType = StatusType.SCRIPT_WARN;
+                } else {
+                    if (!processOutputReceived) {
+                        processOutputReceived = true;
+                    }
+                    statusType = StatusType.SCRIPT_ERROR;
+                }
                 
                 updateStatus(statusType, identifier, logMessage);
             } else {
-                logger.warn("Received script output not in correct output format: '" + line + "'");
+                logger.warn("Received script output in wrong output format: '" + line + "'");
             }
             
 
             if (stream != null) {
                 try {
                     stream.write((message + "\n").getBytes());
-                    if (logger.isDebugEnabled()) logger.debug("Received from script: " + message);
+                    if (logger.isDebugEnabled()) logger.debug("Wrote to stream: " + message);
+                    logger.info("Wrote to stream: " + message);
                 } catch (IOException e) {
-                    logger.info("Received from script: " + message);
+                    logger.warn("Could not write on closed stream: " + message);
                 }
             } else {
                 logger.info("Received from script: " + message);
             }
 
-            if (!processOutputReceived) {
-                processOutputReceived = true;
-            }
         }
 
     }
