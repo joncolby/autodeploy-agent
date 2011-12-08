@@ -52,14 +52,19 @@ public final class AgentUtils {
                 }
         }
 
-        //address = getInetAddressForInterface("bond0");
-        //if (address == null) {
-        //    address = getInetAddressForInterface("eth0");
-        //}
+       // if (address == null) {
+       //     throw new ConfigurationInvalidException("Could not obtain IP address from interfaces");
+       // }
 
-        if (address == null) {
-            throw new ConfigurationInvalidException("Could not obtain IP address from interfaces");
+        if ( address == null ) {
+            try {
+                address = InetAddress.getLocalHost();
+            } catch (UnknownHostException e) {
+                logger.error("Could not determine ip address");
+            }
         }
+
+
         String environment = mapEnvironmentFromIpAddress(address.getHostAddress());
         String hostName = address.getHostName();
         if (Pattern.matches("[0-9\\.]+", hostName)) {
