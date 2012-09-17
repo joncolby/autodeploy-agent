@@ -64,24 +64,32 @@ public final class AgentUtils {
             }
         }
 
-
         String environment = mapEnvironmentFromIpAddress(address.getHostAddress());
-        String hostName = address.getHostName();
-        if (Pattern.matches("[0-9\\.]+", hostName)) {
-            String fallbackHostname;
-            try {
-                fallbackHostname = InetAddress.getLocalHost().getHostName();
-                logger.warn("Could not determine hostname for " + address.getHostAddress() + ", falling back to local hostname: " + fallbackHostname);
-                hostName = fallbackHostname;
-            } catch (UnknownHostException e) {
-                logger.error("Could not get obtain local host? maybe not supported by OS?");
-            }
+        String fullyQualifiedHostName = System.getenv("USE_FQDN");
+        String hostName = null;
+
+        if (fullyQualifiedHostName != null) {
+            hostName = address.getCanonicalHostName();
+            logger.info("fully qualified hostname is '" + hostName + "' and environment is '" + environment + "'");
         } else {
-            if (address.getHostName().indexOf(".") > 0) {
-                hostName = address.getHostName().substring(0, address.getHostName().indexOf("."));
+            hostName = address.getHostName();
+            if (Pattern.matches("[0-9\\.]+", hostName)) {
+                String fallbackHostname;
+                try {
+                    fallbackHostname = InetAddress.getLocalHost().getHostName();
+                    logger.warn("Could not determine hostname for " + address.getHostAddress() + ", falling back to local hostname: " + fallbackHostname);
+                    hostName = fallbackHostname;
+                } catch (UnknownHostException e) {
+                    logger.error("Could not get obtain local host? maybe not supported by OS?");
+                }
+            } else {
+                if (address.getHostName().indexOf(".") > 0) {
+                    hostName = address.getHostName().substring(0, address.getHostName().indexOf("."));
+                }
             }
+            logger.info("stripped hostname is '" + hostName + "' and environment is '" + environment + "'");
         }
-        logger.info("stripped hostname is '" + hostName + "' and environment is '" + environment + "'");
+
         return environment + "/" + hostName;
     }
     
