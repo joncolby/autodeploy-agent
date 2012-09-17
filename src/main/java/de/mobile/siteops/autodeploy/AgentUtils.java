@@ -68,7 +68,7 @@ public final class AgentUtils {
         String fullyQualifiedHostName = System.getenv("USE_FQDN");
         String hostName = null;
 
-        if (fullyQualifiedHostName != null) {
+        if (fullyQualifiedHostName.toUpperCase().equals("TRUE")) {
             hostName = address.getCanonicalHostName();
             logger.info("fully qualified hostname is '" + hostName + "' and environment is '" + environment + "'");
         } else {
