@@ -59,6 +59,7 @@ public final class AgentUtils {
         if ( address == null ) {
             try {
                 address = InetAddress.getLocalHost();
+                logger.warn("Could not determine InetAddress for known interfaces, falling back to ip address set for localhost: " + address);
             } catch (UnknownHostException e) {
                 logger.error("Could not determine ip address");
             }
