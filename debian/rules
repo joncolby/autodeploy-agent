@@ -58,7 +58,7 @@ install: build
 	cp scripts/autodeploy.conf $(CURDIR)/debian/autodeploy-agent/etc/
 	cp scripts/autodeploy-daemon-watcher.sh $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/
 	cp scripts/autodeploy $(CURDIR)/debian/autodeploy-agent/etc/init.d/
-	cp scripts/autodeploy-daemon-watcher.sh-autoupdate $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/
+
 	cp target/autodeployment-agent-LATEST-SNAPSHOT-jar-with-dependencies.jar $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/lib/autodeployment-agent.jar
 
 # Build architecture-independent files here.
