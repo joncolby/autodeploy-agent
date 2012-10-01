@@ -1,12 +1,9 @@
-autodeploy-agent (1.7) unstable; urgency=low
+autodeploy-agent (1.8) unstable; urgency=low
 
   * Initial Release.
   * Increment version 
   * Add related scripts
   * Add init script 
-  * 
-  * 
-  * 
-  * 
+  * move some settings to autodeploy.conf 
 
- -- Jonathan Colby <jcolby@ci38-1.mobile.rz>  Mon, 01 Oct 2012 17:31:49 +0200
+ -- Jonathan Colby <jcolby@ci38-1.mobile.rz>  Mon, 01 Oct 2012 18:03:06 +0200
