@@ -23,7 +23,7 @@ fi
 
 PIDFILE=/var/run/autodeploy-daemon-watcher.pid
 AGENT_PIDFILE=/var/run/autodeploy-agent.pid
-DAEMON_SCRIPT="${AUTODEPLOY_BASEDIR}/autodeploy-daemon-watcher.sh"
+DAEMON_SCRIPT="${AUTODEPLOY_BASEDIR}/${WATCHDOG_SCRIPT}"
 
 _running() {
 	local proc

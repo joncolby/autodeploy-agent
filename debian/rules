@@ -51,18 +51,15 @@ install: build
 	# Add here commands to install the package into debian/autodeploy-agent.
 	#$(MAKE) DESTDIR=$(CURDIR)/debian/autodeploy-agent install
 	mkdir -p $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/lib
-        mkdir -p $(CURDIR)/debian/autodeploy-agent/var/log/autodeploy
-        mkdir -p $(CURDIR)/debian/autodeploy-agent/etc/init.d
-        mkdir -p $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/bin
-
-        cp scripts/deploy_wrapper.sh $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/bin/
-        cp scripts/autodeploy.conf $(CURDIR)/debian/autodeploy-agent/etc/
-        cp scripts/autodeploy-daemon-watcher.sh $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/
-        cp scripts/autodeploy $(CURDIR)/debian/autodeploy-agent/etc/init.d/
-        cp scripts/autodeploy-daemon-watcher.sh-autoupdate $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/
-
+	mkdir -p $(CURDIR)/debian/autodeploy-agent/var/log/autodeploy
+	mkdir -p $(CURDIR)/debian/autodeploy-agent/etc/init.d
+	mkdir -p $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/bin
+	cp scripts/deploy_wrapper.sh $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/bin/
+	cp scripts/autodeploy.conf $(CURDIR)/debian/autodeploy-agent/etc/
+	cp scripts/autodeploy-daemon-watcher.sh $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/
+	cp scripts/autodeploy $(CURDIR)/debian/autodeploy-agent/etc/init.d/
+	cp scripts/autodeploy-daemon-watcher.sh-autoupdate $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/
 	cp target/autodeployment-agent-LATEST-SNAPSHOT-jar-with-dependencies.jar $(CURDIR)/debian/autodeploy-agent/opt/autodeploy/lib/autodeployment-agent.jar
-
 
 # Build architecture-independent files here.
 binary-indep: build install

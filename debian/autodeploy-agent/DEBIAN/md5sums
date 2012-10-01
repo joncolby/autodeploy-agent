@@ -1,4 +1,7 @@
+f77a9adebfc288e82d6752bb9d92f20c  opt/autodeploy/autodeploy-daemon-watcher.sh
+2cb41e05f4995f0573f6f5ec5144ae3e  opt/autodeploy/autodeploy-daemon-watcher.sh-autoupdate
+068876ff3aa1b950eeaae3309d76978d  opt/autodeploy/bin/deploy_wrapper.sh
 fd088ee6367c50fbf2e2b44f0bf2304c  opt/autodeploy/lib/autodeployment-agent.jar
 a02d0623f2dfd6de17ec9fe7630e136d  usr/share/doc/autodeploy-agent/README.Debian
-9992d756fc57eb7668f92c0f99272a58  usr/share/doc/autodeploy-agent/changelog.gz
+7e44425b8bc91260d6238e39ea2b8d0e  usr/share/doc/autodeploy-agent/changelog.gz
 8189f48a38700d56a42b1def7236a078  usr/share/doc/autodeploy-agent/copyright
