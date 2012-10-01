@@ -1,0 +1,166 @@
+#!/bin/bash
+
+# Autodeploy Agent init script
+
+### BEGIN INIT INFO
+# Provides:          autodeploy
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start autodeploy agent daemon at boot time
+# Description:       Enable service provided by autodeploy agent daemon
+### END INIT INFO
+
+# needed for rc.d scripts
+export SHELL="/bin/bash"
+
+CONFIG=/etc/autodeploy.conf
+
+if [ -f $CONFIG ] ; then
+	source $CONFIG
+fi
+
+PIDFILE=/var/run/autodeploy-daemon-watcher.pid
+AGENT_PIDFILE=/var/run/autodeploy-agent.pid
+DAEMON_SCRIPT="${AUTODEPLOY_BASEDIR}/autodeploy-daemon-watcher.sh"
+
+_running() {
+	local proc
+	local pidfile=$1
+
+	if [ ! -f $pidfile ] ; then
+		return 1
+	fi
+
+	proc=$( ps -p $(cat $pidfile ) -o comm|grep -v '^COMMAND' )
+
+	if [ -n "$proc" ] ; then
+		return 0	
+	else
+		return 1
+	fi
+}
+
+case "$1" in 
+
+start)
+
+	if _running $AGENT_PIDFILE ; then
+		echo "Autodeploy Agent is already running with PID $(cat $AGENT_PIDFILE)"
+		exit 0
+	fi
+
+	echo "starting autodeploy ..."
+
+	if command -v start-stop-daemon >/dev/null 2>&1 ; then 
+
+		start-stop-daemon \
+		--start \
+		--background \
+		--chuid root \
+		--make-pidfile \
+		--pidfile $PIDFILE \
+		--exec $DAEMON_SCRIPT
+
+	else
+		nohup $DAEMON_SCRIPT >/dev/null 2>&1 &
+		echo $! > $PIDFILE
+	fi
+	;;
+
+stop)
+
+	# the pidfile might be gone but the process may still be running
+	#if ! _running $AGENT_PIDFILE ; then
+	#	echo "Autodeploy Agent is already stopped"
+	#	exit 0
+	#fi
+
+	echo "stopping autodeploy ..."
+
+	if command -v start-stop-daemon >/dev/null 2>&1 ; then
+
+		# stop the autodeploy watcher script
+		start-stop-daemon --stop --quiet --pidfile $PIDFILE
+		test -f $PIDFILE && rm $PIDFILE
+
+
+		# stop the detached autodeploy java process
+		start-stop-daemon --stop --quiet --pidfile $AGENT_PIDFILE
+	        test -f $AGENT_PIDFILE && rm $AGENT_PIDFILE
+
+	else
+		# stop the autodeploy watcher script
+		test -f $PIDFILE && kill $(cat $PIDFILE)
+		ps -eo pid,args |grep -i autodeploy|grep -v grep | grep $DAEMON_SCRIPT |awk '{ print $1 }' |xargs kill 2>/dev/null
+		test -f $PIDFILE && rm $PIDFILE
+
+		# stop the detached autodeploy java process
+		test -f $AGENT_PIDFILE && kill $(cat $AGENT_PIDFILE)
+		ps -eo pid,args |grep -i autodeploy|grep -v grep | grep java |awk '{ print $1 }' |xargs kill 2>/dev/null
+		test -f $AGENT_PIDFILE && rm $AGENT_PIDFILE
+	fi
+	;;
+
+status)
+
+	if _running $AGENT_PIDFILE ; then
+			echo "Autodeploy Agent running with PID $(cat $AGENT_PIDFILE)"
+			exit 0
+	else
+			echo "Autodeploy Agent is not running"
+			exit 3
+	fi
+
+	;;
+restart|force-reload)
+	$0 stop
+	sleep 1
+	$0 start
+	;;
+uninstall)
+	$0 stop
+	sleep 5
+	test -d /opt/autodeploy && rm -rf /opt/autodeploy
+
+	case $(uname) in
+		*inux)
+		        RC_INST=`which chkconfig`
+		        MODUS=0
+                
+		        if [ "$RC_INST" = "" ]; then
+       		         MODUS=1
+               		 RC_INST=`which update-rc.d`
+		        fi     
+
+		        if [ "$RC_INST" = "" ]; then
+		                echo "No install script for services found."
+		                exit 1
+        		fi
+                                
+		        echo "uninstalling run-level links for autodeploy on Linux"
+                                
+		        if [ $MODUS = 0 ]; then
+		                $RC_INST --del autodeploy
+		        else
+	                	$RC_INST -f autodeploy remove
+		        fi
+		        ;;
+		*)
+	        	echo "not uninstalling run-level scripts"
+        		;;
+	esac
+
+	test -e /etc/init.d/autodeploy && rm /etc/init.d/autodeploy
+	echo "uninstall complete"
+	exit 0
+	;;
+*)
+	echo "Usage: $0 start|stop|status|restart|force-reload|uninstall"
+	exit 1
+	;;
+
+esac
+
+exit 0
