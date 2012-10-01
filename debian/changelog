@@ -1,4 +1,4 @@
-autodeploy-agent (1.6) unstable; urgency=low
+autodeploy-agent (1.7) unstable; urgency=low
 
   * Initial Release.
   * Increment version 
@@ -7,5 +7,6 @@ autodeploy-agent (1.6) unstable; urgency=low
   * 
   * 
   * 
+  * 
 
- -- Jonathan Colby <jcolby@ci38-1.mobile.rz>  Mon, 01 Oct 2012 16:27:46 +0200
+ -- Jonathan Colby <jcolby@ci38-1.mobile.rz>  Mon, 01 Oct 2012 17:31:49 +0200
