@@ -1,0 +1,10 @@
+Package: autodeploy-agent
+Version: 1.0
+Architecture: all
+Maintainer: Jonathan Colby <jcolby@ci38-1.mobile.rz>
+Installed-Size: 3612
+Section: unknown
+Priority: extra
+Homepage: <insert the upstream URL, if relevant>
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
