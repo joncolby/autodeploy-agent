@@ -1,5 +1,5 @@
 Package: autodeploy-agent
-Version: 1.0
+Version: 1.2
 Architecture: all
 Maintainer: Jonathan Colby <jcolby@ci38-1.mobile.rz>
 Installed-Size: 3612
