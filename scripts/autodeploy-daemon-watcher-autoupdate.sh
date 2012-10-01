@@ -36,7 +36,10 @@ INSTALL_LOCATION=$AUTODEPLOY_BASEDIR/lib
 #export http_proxy=http://proxy.mobile.rz:3128
 
 # direct archiva download url
-AGENT_DOWNLOAD_URL=http://maven.corp.mobile.de/archiva/repository/autodeployment-releases/de/mobile/siteops/autodeployment-agent/LATEST-SNAPSHOT
+
+# defined in autodeploy.conf
+#AGENT_DOWNLOAD_URL=http://maven.corp.mobile.de/archiva/repository/autodeployment-releases/de/mobile/siteops/autodeployment-agent/LATEST-SNAPSHOT
+
 # Netapp HTTP url  - availability may be delayed in the datacenter
 #AGENT_DOWNLOAD_URL=http://maven-download.mobile.rz/maven/autodeployment-releases/de/mobile/siteops/autodeployment-agent/LATEST-SNAPSHOT
 AGENT_DOWNLOAD_METADATA=$AGENT_DOWNLOAD_URL/maven-metadata.xml
@@ -46,13 +49,25 @@ AGENT_JARFILE=$INSTALL_LOCATION/$AGENT_DOWNLOAD_NAME
 
 
 # direct archiva download url
-CLIENT_DOWNLOAD_URL=http://maven.corp.mobile.de/archiva/repository/autodeployment-releases/de/mobile/siteops/autodeploy-scripts/LATEST-SNAPSHOT
+# defined in autodeploy.conf
+#CLIENT_DOWNLOAD_URL=http://maven.corp.mobile.de/archiva/repository/autodeployment-releases/de/mobile/siteops/autodeploy-scripts/LATEST-SNAPSHOT
+
 # Netapp HTTP url - availability may be delayed in the datacenter
 #CLIENT_DOWNLOAD_URL=http://maven-download.mobile.rz/maven/autodeployment-releases/de/mobile/siteops/autodeploy-scripts/LATEST-SNAPSHOT
 CLIENT_DOWNLOAD_METADATA=$CLIENT_DOWNLOAD_URL/maven-metadata.xml
 CLIENT_VERSION_INFO=$AUTODEPLOY_BASEDIR/client-version-info
 CLIENT_DOWNLOAD_NAME=autodeploy-scripts.jar
 CLIENT_JARFILE=$INSTALL_LOCATION/$CLIENT_DOWNLOAD_NAME
+
+
+if [ -z "$AGENT_DOWNLOAD_URL"] ; then
+	echo "AGENT_DOWNLOAD_URL is not defined"
+	exit 1
+fi
+if [ -z "$CLIENT_DOWNLOAD_URL" ] ; then 
+	echo "CLIENT_DOWNLOAD_URL is not defined"
+	exit 1
+fi
 
 test -d $AUTODEPLOY_BASEDIR || mkdir -p $AUTODEPLOY_BASEDIR
 test -d $INSTALL_LOCATION || mkdir -p $INSTALL_LOCATION
