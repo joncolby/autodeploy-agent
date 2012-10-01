@@ -16,3 +16,4 @@ activemq-data
 **/.clover
 .idea
 *.iml
+target/classes
