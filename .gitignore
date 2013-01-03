@@ -18,3 +18,4 @@ activemq-data
 *.iml
 target/classes
 debian/autodeploy-agent
+target

@@ -52,10 +52,6 @@ public final class AgentUtils {
                 }
         }
 
-       // if (address == null) {
-       //     throw new ConfigurationInvalidException("Could not obtain IP address from interfaces");
-       // }
-
         if ( address == null ) {
             try {
                 address = InetAddress.getLocalHost();
@@ -70,9 +66,25 @@ public final class AgentUtils {
         String hostName = null;
 
         if (fullyQualifiedHostName != null && fullyQualifiedHostName.toUpperCase().equals("TRUE")) {
-            hostName = address.getCanonicalHostName();
-            logger.info("fully qualified hostname is '" + hostName + "' and environment is '" + environment + "'");
+            // always use localhost hostname since some ips have double or fucked up dns entries.
+            //hostName = address.getCanonicalHostName();
+            try {
+                hostName = InetAddress.getLocalHost().getCanonicalHostName();
+                logger.info("fully qualified hostname is '" + hostName + "' and environment is '" + environment + "'");
+            } catch (UnknownHostException e) {
+                logger.error("Could not obtain hostname via localHost? maybe not supported by OS?");
+            }
         } else {
+            try {
+              hostName = InetAddress.getLocalHost().getHostName();
+              if (hostName.indexOf(".") > 0) {
+                    hostName = hostName.substring(0, hostName.indexOf("."));
+              }
+            } catch(UnknownHostException e) {
+                logger.error("Could not obtain hostname via localHost? maybe not supported by OS?");
+            }
+
+            /*
             hostName = address.getHostName();
             if (Pattern.matches("[0-9\\.]+", hostName)) {
                 String fallbackHostname;
@@ -81,7 +93,7 @@ public final class AgentUtils {
                     logger.warn("Could not determine hostname for " + address.getHostAddress() + ", falling back to local hostname: " + fallbackHostname);
                     hostName = fallbackHostname;
                 } catch (UnknownHostException e) {
-                    logger.error("Could not get obtain local host? maybe not supported by OS?");
+                    logger.error("Could not obtain hostname via localHost?  maybe not supported by OS?");
                 }
             } else {
                 if (address.getHostName().indexOf(".") > 0) {
@@ -89,6 +101,8 @@ public final class AgentUtils {
                 }
             }
             logger.info("stripped hostname is '" + hostName + "' and environment is '" + environment + "'");
+            */
+
         }
 
         return environment + "/" + hostName;
