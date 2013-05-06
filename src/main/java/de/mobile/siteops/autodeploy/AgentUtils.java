@@ -1,11 +1,7 @@
 package de.mobile.siteops.autodeploy;
 
 import java.io.File;
-import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -148,10 +144,13 @@ public final class AgentUtils {
             }
             for (InterfaceAddress interfaceAddress : iface.getInterfaceAddresses()) {
                 if (interfaceAddress.getAddress().isLinkLocalAddress()) continue;
-                return interfaceAddress.getAddress();
+
+                if (interfaceAddress.getAddress() instanceof Inet4Address)
+                    return interfaceAddress.getAddress();
+
             }
         } catch (SocketException e) {
-            throw new ConfigurationInvalidException("Could not get ip address for interface " + interfaceName, e);
+            throw new ConfigurationInvalidException("Could not get ipv4 address for interface " + interfaceName, e);
         }
         return null;
     }
